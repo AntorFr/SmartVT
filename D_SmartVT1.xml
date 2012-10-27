@@ -1,0 +1,316 @@
+<?xml version="1.0"?>
+<root xmlns="urn:schemas-upnp-org:device-1-0">
+  <specVersion>
+    <major>1</major>
+    <minor>0</minor>
+  </specVersion>
+  <device>
+    <deviceType>urn:schemas-upnp-org:device:HVAC_ZoneThermostat:1</deviceType>
+	<staticJson>D_HVAC_ZoneThermostat1.json</staticJson>
+    <serviceList>
+      <service>
+        <Optional/>
+        <serviceType>urn:schemas-upnp-org:service:HVAC_FanOperatingMode:1</serviceType>
+        <serviceId>urn:upnp-org:serviceId:HVAC_FanOperatingMode1</serviceId>
+        <SCPDURL>S_HVAC_FanOperatingMode1.xml</SCPDURL>
+      </service>
+      <service>
+        <serviceType>urn:micasaverde-com:serviceId:HVAC_OperatingState:1</serviceType>
+        <serviceId>urn:micasaverde-com:serviceId:HVAC_OperatingState1</serviceId>
+        <SCPDURL>S_HVAC_OperatingState1.xml</SCPDURL>
+      </service>
+        <service>
+            <serviceType>urn:micasaverde-com:serviceId:SmartVT:1</serviceType>
+            <serviceId>urn:micasaverde-com:serviceId:SmartVT1</serviceId>
+            <SCPDURL>S_SmartVT1.xml</SCPDURL>
+        </service>
+      <service>
+        <serviceType>urn:schemas-upnp-org:service:HVAC_UserOperatingMode:1</serviceType>
+        <serviceId>urn:upnp-org:serviceId:HVAC_UserOperatingMode1</serviceId>
+        <SCPDURL>S_HVAC_UserOperatingMode1.xml</SCPDURL>
+      </service>
+      <service>
+        <Optional/>
+        <serviceType>urn:schemas-upnp-org:service:FanSpeed:1</serviceType>
+        <serviceId>urn:upnp-org:serviceId:FanSpeed1</serviceId>
+        <SCPDURL>S_FanSpeed1.xml</SCPDURL>
+      </service>
+      <service>
+        <serviceType>urn:schemas-upnp-org:service:TemperatureSensor:1</serviceType>
+        <serviceId>urn:upnp-org:serviceId:TemperatureSensor1</serviceId>
+        <SCPDURL>S_TemperatureSensor1.xml</SCPDURL>
+      </service>
+      <service>
+        <serviceType>urn:schemas-upnp-org:service:TemperatureSetpoint:1</serviceType>
+        <serviceId>urn:upnp-org:serviceId:TemperatureSetpoint1_Heat</serviceId>
+        <SCPDURL>S_TemperatureSetpoint1.xml</SCPDURL>
+      </service>
+      <service>
+        <serviceType>urn:schemas-upnp-org:service:TemperatureSetpoint:1</serviceType>
+        <serviceId>urn:upnp-org:serviceId:TemperatureSetpoint1_Cool</serviceId>
+        <SCPDURL>S_TemperatureSetpoint1.xml</SCPDURL>
+      </service>
+      <service>
+        <serviceType>urn:schemas-upnp-org:service:SwitchPower:1</serviceType>
+        <serviceId>urn:upnp-org:serviceId:SwitchPower1</serviceId>
+        <SCPDURL>S_SwitchPower1.xml</SCPDURL>
+      </service>
+      <service>
+        <serviceType>urn:schemas-micasaverde-com:service:EnergyMetering:1</serviceType>
+        <serviceId>urn:micasaverde-com:serviceId:EnergyMetering1</serviceId>
+        <SCPDURL>S_EnergyMetering1.xml</SCPDURL>
+      </service>
+      <service>
+        <serviceType>urn:schemas-micasaverde-com:service:HaDevice:1</serviceType>
+        <serviceId>urn:micasaverde-com:serviceId:HaDevice1</serviceId>
+        <SCPDURL>S_HaDevice1.xml</SCPDURL>
+      </service>
+    </serviceList>
+  <sceneList>
+{
+	"group_1":{
+		"cmd_1": 
+		{
+			"label": "OFF",
+			"serviceId": "urn:upnp-org:serviceId:HVAC_UserOperatingMode1",
+			"action": "SetModeTarget",
+			"arguments":
+			{
+				"NewModeTarget": "Off"
+			}
+		},
+		"cmd_2": 
+		{
+			"label": "COOL",
+			"serviceId": "urn:upnp-org:serviceId:HVAC_UserOperatingMode1",
+			"action": "SetModeTarget",
+			"arguments":
+			{
+				"NewModeTarget": "CoolOn"
+			}
+		},
+		"cmd_3": 
+		{
+			"label": "HEAT",
+			"serviceId": "urn:upnp-org:serviceId:HVAC_UserOperatingMode1",
+			"action": "SetModeTarget",
+			"arguments":
+			{
+				"NewModeTarget": "HeatOn"
+			}
+		},
+		"cmd_4": 
+		{
+			"label": "AUTO",
+			"serviceId": "urn:upnp-org:serviceId:HVAC_UserOperatingMode1",
+			"action": "SetModeTarget",
+			"arguments":
+			{
+				"NewModeTarget": "AutoChangeOver"
+			}
+		}
+	},
+	"group_2":{
+		"cmd_1": 
+		{
+			"label": "Set Heat Setpoint",
+			"serviceId": "urn:upnp-org:serviceId:TemperatureSetpoint1_Heat",
+			"action": "SetCurrentSetpoint",
+			"argumentList":
+			{
+				"argument_1" :
+				{
+					"dataType": "ui1",
+					"defaultValue": "",
+					"allowedValueRange" : 
+					{
+						"minimum": "0",
+						"maximum": "100"
+					},
+					"prefix": "to",
+					"suffix": "°",
+					"name": "NewCurrentSetpoint"
+				}
+			}
+		}
+	},
+	"group_3":{
+		"cmd_1": 
+		{
+			"label": "Set Cool Setpoint",
+			"serviceId": "urn:upnp-org:serviceId:TemperatureSetpoint1_Cool",
+			"action": "SetCurrentSetpoint",
+			"argumentList":
+			{
+				"argument_1" :
+				{
+					"dataType": "ui1",
+					"defaultValue": "",
+					"allowedValueRange" : 
+					{
+						"minimum": "0",
+						"maximum": "100"
+					},
+					"prefix": "to",
+					"suffix": "°",
+					"name": "NewCurrentSetpoint"
+				}
+			}
+		}
+	},
+	"group_4":{
+		"cmd_1": 
+		{
+			"label": "Set Fan On",
+			"serviceId": "urn:upnp-org:serviceId:HVAC_FanOperatingMode1",
+			"action": "SetMode",
+			"arguments":
+			{
+				"NewMode": "ContinuousOn"
+			}
+		},
+		"cmd_2": 
+		{
+			"label": "Set Fan Auto",
+			"serviceId": "urn:upnp-org:serviceId:HVAC_FanOperatingMode1",
+			"action": "SetMode",
+			"arguments":
+			{
+				"NewMode": "Auto"
+			}
+		}
+	},
+	"group_5":{
+		"cmd_1": 
+		{
+			"label": "Normal",
+			"serviceId": "urn:upnp-org:serviceId:SwitchPower1",
+			"action": "SetTarget",
+			"arguments":
+			{
+				"newTargetValue": "1"
+			}
+		},
+		"cmd_2": 
+		{
+			"label": "Energy Save",
+			"serviceId": "urn:upnp-org:serviceId:SwitchPower1",
+			"action": "SetTarget",
+			"arguments":
+			{
+				"newTargetValue": "0"
+			}
+		}
+	}
+}    
+  </sceneList>
+  <eventList>
+{
+	"event_1":{
+		"label": "Thermostat Mode Changes",
+		"serviceId": "urn:upnp-org:serviceId:HVAC_UserOperatingMode1",
+		"argumentList" :
+		{
+			"argument_1" :
+			{
+				"dataType": "string",
+				"defaultValue": "",
+				"allowedValueList" : 
+				{
+					"Off" : "Off",
+					"Cool" : "CoolOn",
+					"Heat" : "HeatOn",
+					"Auto" : "AutoChangeOver"
+				},
+				"name": "ModeStatus",
+				"comparisson": "=",
+				"prefix": "Which mode",
+				"suffix": "none"
+			}
+		}
+	},
+	"event_2":{
+		"label": "Temperature goes above",
+		"serviceId": "urn:upnp-org:serviceId:TemperatureSensor1",
+		"argumentList" :
+		{
+			"argument_1" :
+			{
+				"dataType": "i4",
+				"name": "CurrentTemperature",
+				"comparisson": "&gt;",
+				"prefix": "temperature: ",
+				"suffix": " degrees"
+			}
+		}
+	},
+	"event_3":{
+		"label": "Energy Save Mode or Normal Mode?",
+		"serviceId": "urn:upnp-org:serviceId:SwitchPower1",
+		"argumentList" :
+		{
+			"argument_1" :
+			{
+				"dataType": "boolean",
+				"defaultValue": "1",
+				"allowedValueList" : 
+				{
+					"Energy" : "0",
+					"Normal" : "1"
+				},
+				"name": "Status",
+				"comparisson": "=",
+				"prefix": "Which mode",
+				"suffix": ""
+			}
+		}
+	},
+	"event_4":{
+		"label": "Temperature is reached",
+		"serviceId": "urn:upnp-org:serviceId:TemperatureSensor1",
+		"argumentList" :
+		{
+			"argument_1" :
+			{
+				"dataType": "i4",
+				"name": "CurrentTemperature",
+				"comparisson": "&lt;,&gt;",
+				"prefix": "temperature: ",
+				"suffix": " degrees"
+			}
+		}
+	},
+	"event_5":{
+		"label": "Thermostat HEAT set point is reached",
+		"serviceId": "urn:upnp-org:serviceId:TemperatureSetpoint1_Heat",
+		"argumentList" :
+		{
+			"argument_1" :
+			{
+				"dataType": "i4",
+				"name": "CurrentSetpoint",
+				"comparisson": "&gt;",
+				"prefix": "temperature: ",
+				"suffix": " degrees"
+			}
+		}
+	},
+	"event_6":{
+		"label": "Thermostat COOL set point is reached",
+		"serviceId": "urn:upnp-org:serviceId:TemperatureSetpoint1_Cool",
+		"argumentList" :
+		{
+			"argument_1" :
+			{
+				"dataType": "i4",
+				"name": "CurrentSetpoint",
+				"comparisson": "&gt;",
+				"prefix": "temperature: ",
+				"suffix": " degrees"
+			}
+		}
+	}	
+}
+  </eventList>
+  </device>
+</root>

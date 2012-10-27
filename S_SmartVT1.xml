@@ -1,0 +1,44 @@
+<scpd>
+   <serviceStateTable>
+       <stateVariable>
+           <name>Inside Temp Sensors</name>
+           <dataType>string</dataType>
+           <defaultValue/>
+       </stateVariable>
+       <stateVariable>
+           <name>Outside Temp Sensors</name>
+           <dataType>string</dataType>
+           <defaultValue/>
+       </stateVariable>
+       <stateVariable>
+           <name>inhibit Sensors</name>
+           <dataType>string</dataType>
+           <defaultValue/>
+       </stateVariable>
+       <stateVariable>
+           <Optional/>
+           <name>Forced Mode Duration</name>
+           <dataType>ui4</dataType>
+            <defaultValue>1200</defaultValue>
+       </stateVariable>
+       <stateVariable>
+           <Optional/>
+           <name>Waiting Time Open</name>
+           <dataType>ui4</dataType>
+           <defaultValue>0</defaultValue>
+       </stateVariable>
+       <stateVariable>
+           <Optional/>
+           <name>Waiting Time Close</name>
+           <dataType>ui4</dataType>
+           <defaultValue>0</defaultValue>
+       </stateVariable>
+      <stateVariable>
+          <name>Forced Mode</name>
+          <dataType>boolean</dataType>
+          <defaultValue>0</defaultValue>
+      </stateVariable>
+   </serviceStateTable>
+   <actionList>
+   </actionList>
+</scpd>
