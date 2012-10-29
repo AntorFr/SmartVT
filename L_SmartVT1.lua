@@ -1,4 +1,4 @@
---  START COMMUN FUNCTION
+
         
         function readVariableOrInit(lul_device, devicetype, name, defaultValue)
             local var = luup.variable_get(devicetype,name, lul_device)
@@ -39,4 +39,4 @@
             local mult = 10^(idp or 0)
             return math.floor(num * mult + 0.5) / mult
         end
---  END COMMUN FUNCTION
+
