@@ -40,3 +40,11 @@
             return math.floor(num * mult + 0.5) / mult
         end
 
+
+    function GetTime(TimeStamp,Sec)
+        
+        local dr = os.date("*t",TimeStamp) -- Referece date
+        local newSec = os.time({year=dr.year, month=dr.month, day=dr.day, hour=dr.hour, min=dr.min, sec=(dr.sec+Sec)})
+        
+        return newSec
+    end
