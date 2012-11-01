@@ -13,21 +13,15 @@
         
 		local DELAY = 20 -- Seconds
 		local DEFAULT_HEAT_SP = 21
-		local DEFAULT_COOL_SP = 18
+		local DEFAULT_COOL_SP = 25
 		local DEFAULT_HG_SP = 8
-		local MAX_TEMP = 40
-		local MIN_TEMP = 0
-		local STEP = 1
 		local constC = 0.6
 		local constT = 0.01
-		local power
-		local ID_EVAN_TEMP = 61
 		local interval = "5m"
-		local Tinterval = 3600
-		local min_temp
+		local Tinterval = 3600 -- Plage de chauffe
         
 		function virtual_thermostat_startup (lul_device)
-            luup.log ("Virtual thermostat running...")
+            luup.log ("Smart Virtual thermostat running...")
             local data = readSettings(lul_device)
             updateStatus(lul_device)
 		end
@@ -57,39 +51,6 @@
             return data
         end
 		
-		
-		function increaseTemp(lul_device)
-            local data = readSettings(lul_device)
-        
-			local currentTemperature = data.CurrentTemperature + STEP
-			local target = data.heatSp or MAX_TEMP
-			if (currentTemperature &lt;= target) then
-				if (currentTemperature &lt; target) then
-                    SetTargetTable("1",data.heaters)
-				else
-                    SetTargetTable("0",data.heaters)
-					luup.variable_set (HVOS_SID, "ModeState", "Idle", lul_device)
-				end
-			end
-		end
-
-
-		function decreaseTemp (lul_device)
-            local data = readSettings(lul_device)
-        
-            local currentTemperature = data.CurrentTemperature - STEP
-			coolSp = tonumber (coolSp)
-			local target = coolSp or MIN_TEMP
-			if (currentTemperature &gt;= target) then
-				luup.variable_set (TEMP_SID, "CurrentTemperature", tostring (currentTemperature), lul_device)
-				if (currentTemperature &gt; target) then
-				else
-					luup.variable_set (HVOS_SID, "ModeState", "Idle", lul_device)
-				end
-			end
-		end
-        
-        
         function AvgTemperature(t)
             local sum = 0
             local count= 0
@@ -176,8 +137,7 @@
 			else
 				luup.variable_set (HVUOM_SID, "ModeStatus", "Off", lul_device)
 				luup.variable_set (HVOS_SID, "ModeState", "Idle", lul_device)
-				power = 0
-				luup.log("La puissance de chauffe est de: " .. power)
+				luup.log("La puissance de chauffe est de: 0 ")
                 SetTargetTable("0",data.heaters)
 --				SetTargetTable("0",data.Coolers)
 			end
