@@ -22,7 +22,7 @@
 		local constT = 0.01
 		local power
 		local ID_EVAN_TEMP = 61
-		local interval = "1m"
+		local interval = "5m"
 		local Tinterval = 3600
 		local min_temp
         
@@ -133,6 +133,7 @@
 			local modeStatus = luup.variable_get(HVUOM_SID, "ModeStatus", lul_device)
         
 			readTemp(lul_device,data)
+
         
 			if (modeStatus == "HeatOn") then
 				luup.variable_set (HVOS_SID, "ModeState", "Heating", lul_device)
@@ -141,14 +142,25 @@
 				luup.variable_set (HVOS_SID, "ModeState", "Cooling", lul_device)
 --				SetTargetTable("1",data.Coolers)
 			elseif (modeStatus == "AutoChangeOver") then
+        
+                -- Gestion des capteurs
+                if (Inibitors(data)) then
+                    luup.variable_set (HVOS_SID, "ModeState", "Idle", lul_device)
+                    luup.log("Inibitor detecte : arret du chauffage")
+                    SetTargetTable("0",data.heaters)
+                    luup.call_timer("updateStatus", 1, interval, "", tostring(lul_device))
+                    return
+                end
 
+                -- Gestion de l'inteligence'
                 if ( os.time() &gt;=  (data.TimesStamp + Tinterval )) then
                     --relancer la Configuration
                     AutoChangeOver(lul_device)
                 end
         
-                local ModeState = luup.variable_get (HVOS_SID, "ModeState", lul_device)
         
+                -- Gestion des commandes
+                local ModeState = luup.variable_get (HVOS_SID, "ModeState", lul_device)
                 if (ModeState == "Heating") then
                     if(os.time() &gt;= data.EndHeatTimesStamp ) then
                         SetTargetTable("0",data.heaters)
@@ -169,6 +181,7 @@
                 SetTargetTable("0",data.heaters)
 --				SetTargetTable("0",data.Coolers)
 			end
+        
 			luup.call_timer("updateStatus", 1, interval, "", tostring(lul_device))
 		end
         
@@ -183,6 +196,24 @@
             --luup.variable_set (TEMP_SID, "CurrentTemperature", Text, lul_device)
         
             return Tint,Text
+        end
+        
+        function Inibitors(data)
+            for index = 1, #data.inhibitSensors, 1 do
+                local device = data.inhibitSensors[index]
+                local invert = false
+                if (0 > device) then
+                    device = 0 - device
+                    invert = true
+                end
+        
+                local inhibitor, lastSet = luup.variable_get(SWP_SID, "Status", device)
+        
+                if (inhibitor == (invert and "0" or "1")) then
+                    return true
+                end
+            end
+            return false
         end
         
         function AutoChangeOver(lul_device)

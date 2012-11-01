@@ -5,7 +5,7 @@
     <minor>0</minor>
   </specVersion>
   <device>
-    <deviceType>urn:schemas-upnp-org:device:HVAC_ZoneThermostat:1</deviceType>
+    <deviceType>urn:antor-fr:device:HVAC_ZoneThermostat:1</deviceType>
 	<staticJson>D_HVAC_ZoneThermostat1.json</staticJson>
     <serviceList>
       <service>
