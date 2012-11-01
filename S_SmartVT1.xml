@@ -16,6 +16,11 @@
            <defaultValue/>
        </stateVariable>
        <stateVariable>
+           <name>heaters</name>
+           <dataType>string</dataType>
+           <defaultValue/>
+       </stateVariable>
+       <stateVariable>
            <Optional/>
            <name>Forced Mode Duration</name>
            <dataType>ui4</dataType>
@@ -38,6 +43,14 @@
           <dataType>boolean</dataType>
           <defaultValue>0</defaultValue>
       </stateVariable>
+       <stateVariable>
+           <name>EndHeatTimesStamp</name>
+           <dataType>ui4</dataType>
+       </stateVariable>
+       <stateVariable>
+           <name>TimesStamp</name>
+           <dataType>ui4</dataType>
+       </stateVariable>
    </serviceStateTable>
    <actionList>
    </actionList>
