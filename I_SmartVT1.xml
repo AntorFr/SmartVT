@@ -9,7 +9,8 @@
         local TSC_SID =     "urn:upnp-org:serviceId:TemperatureSetpoint1_Cool"
         local HVUOM_SID =   "urn:upnp-org:serviceId:HVAC_UserOperatingMode1"
         local SVT_SID =     "urn:micasaverde-com:serviceId:SmartVT1"
-        local SWP_SID =    "urn:upnp-org:serviceId:SwitchPower1"
+        local SWP_SID =		"urn:upnp-org:serviceId:SwitchPower1"
+		local DIM_SID =		"urn:upnp-org:serviceId:Dimming1"
         
 		local DELAY = 20 -- Seconds
 		local DEFAULT_HEAT_SP = 21
@@ -17,8 +18,10 @@
 		local DEFAULT_HG_SP = 8
 		local constC = 0.6
 		local constT = 0.01
-		local interval = "5m"
+		local interval = "1m"
 		local Tinterval = 3600 -- Plage de chauffe
+		local heaterMode = 2
+		local heaterStatus = "0"
         
 		function virtual_thermostat_startup (lul_device)
             luup.log ("Smart Virtual thermostat running...")
@@ -75,10 +78,25 @@
         
         
         function SetTargetTable(target,t)
-            for k,id in pairs(t) do
+			if heaterMode == 1 then -- Radiateur gere par switch ON OFF
+				for k,id in pairs(t) do
                 luup.call_action(SWP_SID, "SetTarget", { newTargetValue=target }, id)
-                
-            end
+                end
+			elseif heaterMode == 2 then -- Radiateur gere par le dimming pilotwire Antor 0 33 66 100
+				if target == "1" then target = "100" end
+				for k,id in pairs(t) do
+				heaterStatus = luup.variable_get(DIM_SID, "LoadLevelStatus", id) -- On recupere la variable du plugin pilotwire Antor
+				if heaterStatus ~= target then -- Si la variable du plugin pilotwire Antor est different du Target, on envoie la commande
+					luup.call_action(DIM_SID, "SetLoadLevelTarget", { newLoadlevelTarget=target }, id)
+				end
+                end
+			elseif heaterMode == 3 then
+				-- Mode 3 a definir
+			elseif heaterMode == 4 then
+				-- Mode 4 a definir
+			else
+				--
+			end
         end
         
 		function updateStatus(lul_device)
@@ -87,7 +105,7 @@
         
             -- check data before process
 --          if (data.InSensors == nill or #data.InSensors &lt; 1 or data.heaters == nill or #data.heaters &lt; 1) then
---              luup.log("Configuration erronée")
+--              luup.log("Configuration erronee")
 --              return nill
 --          end
         
@@ -101,7 +119,7 @@
 				SetTargetTable("1",data.heaters)
 			elseif (modeStatus == "CoolOn") then
 				luup.variable_set (HVOS_SID, "ModeState", "Cooling", lul_device)
---				SetTargetTable("1",data.Coolers)
+				SetTargetTable("1",data.Coolers)
 			elseif (modeStatus == "AutoChangeOver") then
         
                 -- Gestion des capteurs
@@ -109,13 +127,14 @@
                     luup.variable_set (HVOS_SID, "ModeState", "Idle", lul_device)
                     luup.log("Inibitor detecte : arret du chauffage")
                     SetTargetTable("0",data.heaters)
+					luup.log("SetTargetTable 0 Inibitors")
                     luup.call_timer("updateStatus", 1, interval, "", tostring(lul_device))
                     return
                 end
 
-                -- Gestion de l'inteligence'
+                -- Gestion de l'intelligence
                 if ( os.time() &gt;=  (data.TimesStamp + Tinterval )) then
-                    --relancer la Configuration
+                    -- On relance le calcul de la regulation tous les Tinterval secondes
                     AutoChangeOver(lul_device)
                 end
         
@@ -148,11 +167,11 @@
         function readTemp(lul_device,data)
         
             local Tint = AvgTemperature(data.InSensors) or data.heatSp
-            luup.log("La temperature moyenne intereieur est de " .. Tint .. " DEGC")
+            luup.log("La temperature moyenne interieure est de " .. Tint .. " DEGC")
             luup.variable_set (TEMP_SID, "CurrentTemperature", Tint, lul_device)
         
             local Text = AvgTemperature(data.OutSensors) or data.heatSp
-            luup.log("La temperature moyenne exterieur est de " .. Text .. " DEGC")
+            luup.log("La temperature moyenne exterieure est de " .. Text .. " DEGC")
             --luup.variable_set (TEMP_SID, "CurrentTemperature", Text, lul_device)
         
             return Tint,Text
@@ -199,8 +218,6 @@
                 luup.variable_set (SVT_SID, "EndHeatTimesStamp", hchauf, lul_device)
                 luup.variable_set (HVOS_SID, "ModeState", "Heating", lul_device)
                 
-            elseif (Tint &gt; data.coolSp) then
---              luup.variable_set (HVOS_SID, "ModeState", "Cooling", lul_device)
             else
                 luup.variable_set (HVOS_SID, "ModeState", "Idle", lul_device)
             end
@@ -231,6 +248,7 @@
                 local modeStatus = luup.variable_get (HVUOM_SID, "ModeStatus", lul_device)
 				if (modeStatus == "AutoChangeOver") then
                     AutoChangeOver(lul_device)
+					updateStatus(lul_device)
                 end
 				return 4, 5
 			</job>
@@ -243,6 +261,7 @@
                 local modeStatus = luup.variable_get (HVUOM_SID, "ModeStatus", lul_device)
 				if (modeStatus == "AutoChangeOver") then
                     AutoChangeOver(lul_device)
+					updateStatus(lul_device)
                 end
 				return 4, 5
 			</job>
