@@ -20,6 +20,26 @@
            <dataType>string</dataType>
            <defaultValue/>
        </stateVariable>
+	   <stateVariable>
+           <name>heaterMode</name>
+           <dataType>string</dataType>
+           <defaultValue/>
+       </stateVariable>
+   	   <stateVariable>
+           <name>powerMin</name>
+           <dataType>string</dataType>
+           <defaultValue/>
+       </stateVariable>
+   	   <stateVariable>
+           <name>heatTimeleft</name>
+           <dataType>string</dataType>
+           <defaultValue/>
+       </stateVariable>
+	      	   <stateVariable>
+           <name>calTimeleft</name>
+           <dataType>string</dataType>
+           <defaultValue/>
+       </stateVariable>
        <stateVariable>
            <Optional/>
            <name>Forced Mode Duration</name>

@@ -1,4 +1,3 @@
-
         
         function readVariableOrInit(lul_device, devicetype, name, defaultValue)
             local var = luup.variable_get(devicetype,name, lul_device)

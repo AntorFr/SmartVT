@@ -449,7 +449,7 @@
                         "Action": "SetEnergyModeTarget",
                         "Parameters": [
                             {
-                                "Name": "NewModeTarget",
+                                "Name": "NewEnergyModeTarget",
                                 "Value": "EnergySavingsMode"
                             }
                         ]
@@ -479,12 +479,92 @@
                         "Action": "SetEnergyModeTarget",
                         "Parameters": [
                             {
-                                "Name": "NewModeTarget",
+                                "Name": "NewEnergyModeTarget",
                                 "Value": "Normal"
                             }
                         ]
                     },
                     "ControlCode": "energy_normal"
+                },
+				{
+                    "ControlType": "label",
+                    "Label": {
+                        "lang_tag": "labelcycle",
+                        "text": "Temps restant avant fin de chauffe :"
+                    },														
+                    "text_align": "left",
+                    "Display": {
+                        "Top": 200,
+                        "Left": 50,
+                        "Width": 75,
+                        "Height": 20
+                    }
+                },
+                {
+                    "ControlType": "variable",
+                    "text_align": "left",
+                    "Display": {
+                        "Service": "urn:micasaverde-com:serviceId:SmartVT1",
+                        "Variable": "heatTimeleft",
+                        "Top": 200,
+                        "Left": 270,
+                        "Width": 200,
+                        "Height": 20
+                    }
+                },
+				{
+                    "ControlType": "label",
+                    "Label": {
+                        "lang_tag": "labelcycle",
+                        "text": "secondes"
+                    },														
+                    "text_align": "left",
+                    "Display": {
+                        "Top": 200,
+                        "Left": 310,
+                        "Width": 75,
+                        "Height": 20
+                    }
+                },
+				{
+                    "ControlType": "label",
+                    "Label": {
+                        "lang_tag": "labelcycle",
+                        "text": "Temps restant avant nouveau calcul :"
+                    },														
+                    "text_align": "left",
+                    "Display": {
+                        "Top": 230,
+                        "Left": 50,
+                        "Width": 75,
+                        "Height": 20
+                    }
+                },
+                {
+                    "ControlType": "variable",
+                    "text_align": "left",
+                    "Display": {
+                        "Service": "urn:micasaverde-com:serviceId:SmartVT1",
+                        "Variable": "calTimeleft",
+                        "Top": 230,
+                        "Left": 270,
+                        "Width": 200,
+                        "Height": 20
+                    }
+                },
+				{
+                    "ControlType": "label",
+                    "Label": {
+                        "lang_tag": "labelcycle",
+                        "text": "secondes"
+                    },														
+                    "text_align": "left",
+                    "Display": {
+                        "Top": 230,
+                        "Left": 310,
+                        "Width": 75,
+                        "Height": 20
+                    }
                 }
             ]
         },
