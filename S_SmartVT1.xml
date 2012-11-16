@@ -35,7 +35,7 @@
            <dataType>string</dataType>
            <defaultValue/>
        </stateVariable>
-	      	   <stateVariable>
+	   <stateVariable>
            <name>calTimeleft</name>
            <dataType>string</dataType>
            <defaultValue/>
@@ -60,8 +60,8 @@
        </stateVariable>
       <stateVariable>
           <name>Forced Mode</name>
-          <dataType>boolean</dataType>
-          <defaultValue>0</defaultValue>
+          <dataType>string</dataType>
+          <defaultValue/>
       </stateVariable>
        <stateVariable>
            <name>EndHeatTimesStamp</name>

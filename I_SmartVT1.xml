@@ -11,6 +11,10 @@
         local SVT_SID =     "urn:micasaverde-com:serviceId:SmartVT1"
         local SWP_SID =		"urn:upnp-org:serviceId:SwitchPower1"
 		local DIM_SID =		"urn:upnp-org:serviceId:Dimming1"
+		local DOOR_SID = 	"urn:micasaverde-com:serviceId:SecuritySensor1"
+		local DOOR_DT =		"urn:schemas-micasaverde-com:device:DoorSensor:1"
+		local SWP_DT = 		"urn:schemas-upnp-org:device:BinaryLight:1"
+		local SmartVT1_id = tonumber(lul_device)
         
 		local DELAY = 20 -- Seconds
 		local DEFAULT_HEAT_SP = 21
@@ -21,16 +25,18 @@
 		local interval = "1m"
 		local Tinterval = 3600 -- Plage de chauffe
 		local heaterStatus = "0"
---		local startup -- Jeton permettant de savoir si l'on vient de rafraichir la Vera. Si oui, on relance le calcul.
+		local WindowOpened = 0
+		--		local startup -- Jeton permettant de savoir si l'on vient de rafraichir la Vera. Si oui, on relance le calcul.
         
 		function virtual_thermostat_startup (lul_device)
             luup.log ("Smart Virtual thermostat running...")
 --            startup = 1
---			local data = readSettings(lul_device)
+			local data = readSettings(lul_device)
             updateStatus(lul_device)
+			register_watch(data)
 		end
         
-        function readSettings(lul_device)
+		function readSettings(lul_device)
             local data = {}
         
             -- Config ID
@@ -38,22 +44,22 @@
             data.OutSensors = toListOfNumbers(readVariableOrInit(lul_device,SVT_SID, "Outside Temp Sensors", "" ))
             data.inhibitSensors = toListOfNumbers(readVariableOrInit(lul_device,SVT_SID, "inhibit Sensors", "" ))
             data.heaters = toListOfNumbers(readVariableOrInit(lul_device,SVT_SID, "heaters", "" ))
-        
+			
             -- Config Variables
-            data.OpenTempo = tonumber(readVariableOrInit(lul_device,SVT_SID, "Waiting Time Open", "0" ))
-            data.CloseTempo = tonumber(readVariableOrInit(lul_device,SVT_SID, "Waiting Time Close", "0" ))
-            data.ForcedTempo = tonumber(readVariableOrInit(lul_device,SVT_SID, "Forced Mode Duration", "1200" ))
+            data.OpenTempo = tostring(readVariableOrInit(lul_device,SVT_SID, "Waiting Time Open", "0" ))
+			data.CloseTempo = tostring(readVariableOrInit(lul_device,SVT_SID, "Waiting Time Close", "0" ))
+			data.ForcedTempo = tonumber(readVariableOrInit(lul_device,SVT_SID, "Forced Mode Duration", "3600" ))
 			data.heaterMode = tonumber(readVariableOrInit(lul_device,SVT_SID, "heaterMode", "2" ))
 			data.powerMin = tonumber(readVariableOrInit(lul_device,SVT_SID, "powerMin", "15" ))
 			data.heatTimeleft = tonumber(readVariableOrInit(lul_device,SVT_SID, "heatTimeleft", "0" )) -- Temps restant en sec avant fin de chauffe
 			data.calTimeleft = tonumber(readVariableOrInit(lul_device,SVT_SID, "calTimeleft", "0" )) -- Temps restant en sec avec nouveau calcul de regul
 
-			
+
             data.heatSp = tonumber(readVariableOrInit(lul_device,TSH_SID, "CurrentSetpoint", DEFAULT_HEAT_SP ))
             data.coolSp = tonumber(readVariableOrInit(lul_device,TSC_SID, "CurrentSetpoint", DEFAULT_COOL_SP ))
         
             -- internal Variables
-            --data.ForcedModeState = readVariableOrInit(lul_device,SVT_SID, "Forced Mode", "0" )
+            data.ForcedModeState = readVariableOrInit(lul_device,SVT_SID, "Forced Mode", "ForcedOff" )
             data.EndHeatTimesStamp = tonumber(readVariableOrInit(lul_device,SVT_SID, "EndHeatTimesStamp", "0" ))
             data.TimesStamp = tonumber(readVariableOrInit(lul_device,SVT_SID, "TimesStamp", "0" ))
         
@@ -66,9 +72,8 @@
             local temp = {}
             for k,id in pairs(t) do
                 local temp = luup.variable_get(TEMP_SID, "CurrentTemperature", id)
-                luup.log("Sensor id : " .. id .. " value =".. temp)
                 temp = tonumber(temp) 
-                if (temp ~= nill) then
+                if (temp ~= nil) then -- Replace nill par nil
                     sum = sum + temp
                     count = count + 1
                 end
@@ -105,11 +110,55 @@
 				--
 			end
         end
-        
+		
+		-- Fonction lancee si changement d'etat d'une variable watchee
+		function watch_callback(lul_device, lul_service, lul_variable, lul_value_old, lul_value_new)
+			local data = readSettings(SmartVT1_id)
+			luup.log("Watched variable changed: " .. lul_device .. " " .. lul_service .. " " .. lul_variable .. " from " .. lul_value_old .. " to " .. lul_value_new)
+			if (Inibitors(data)) then
+				luup.log("Une fenetre vient de s ouvrir, il faut gerer la tempo ouverture")
+				--luup.call_timer("gestionTempoOuverture", 1, tostring(data.OpenTempo), "", tostring(lul_device))
+				luup.call_timer("gestionTempoOuverture", 1, data.OpenTempo, "", tostring(SmartVT1_id))
+			else
+				luup.log("Une fenetre vient de se fermer, il faut gerer la tempo fermeture")
+				--luup.call_timer("gestionTempoOuverture", 1, tostring(data.CloseTempo), "", tostring(lul_device))
+				luup.call_timer("gestionTempoFermeture", 1, data.CloseTempo, "", tostring(SmartVT1_id))
+			end
+		end
+		
+		-- Action a mener des que les variables surveillees changent d'etat
+		function gestionTempoOuverture()
+			local data = readSettings(lul_device)
+			WindowOpened = 1
+			-- On verifie que Inibitors est toujours present apres la tempo pour desactiver le chauffage
+			if (Inibitors(data)) then
+                luup.variable_set (HVOS_SID, "ModeState", "Idle", lul_device)
+                luup.log("Inibitor detecte : arret du chauffage")
+                SetTargetTable("0",data.heaters,data.heaterMode)
+				updateStatus()
+            else
+				luup.log("Inibitor n'est plus detecte. Retour a la normale")
+			end
+		end
+		
+		function gestionTempoFermeture()
+			local data = readSettings(lul_device)
+			WindowOpened = 0
+			-- On verifie que Inibitors est toujours absent apres la tempo pour activer le chauffage
+			if not(Inibitors(data)) then
+                luup.variable_set (HVOS_SID, "ModeState", "Heating", lul_device)
+                luup.log("Inibitor n'est plus detecte et tempo ecoulee : reprise du chauffage")
+                SetTargetTable("1",data.heaters,data.heaterMode)
+				updateStatus()                
+            else
+				luup.log("Inibitor de nouveau detected. On ne reprend pas la regulation.")
+			end
+		end
+				        
 		function updateStatus(lul_device)
             lul_device = tonumber(lul_device)
             local data = readSettings(lul_device)
-        
+						        
             -- check data before process
 --          if (data.InSensors == nill or #data.InSensors &lt; 1 or data.heaters == nill or #data.heaters &lt; 1) then
 --              luup.log("Configuration erronee")
@@ -128,15 +177,16 @@
 				SetTargetTable("1",data.Coolers,data.heaterMode)
 			elseif (modeStatus == "AutoChangeOver") then
         
-                -- Gestion des capteurs
+                --[[ Gestion des capteurs
                 if (Inibitors(data)) then
                     luup.variable_set (HVOS_SID, "ModeState", "Idle", lul_device)
                     luup.log("Inibitor detecte : arret du chauffage")
                     SetTargetTable("0",data.heaters,data.heaterMode)
 					luup.log("SetTargetTable 0 Inibitors")
                     luup.call_timer("updateStatus", 1, interval, "", tostring(lul_device))
-                    return
-                end
+                else
+					luup.log("PAS DE Inibitor detecte")
+				end ]]--
 
                 -- Gestion de l'intelligence
 				local tempcal = (data.TimesStamp + Tinterval)
@@ -201,25 +251,35 @@
         
             return Tint,Text
         end
-        
+		
         function Inibitors(data)
             for index = 1, #data.inhibitSensors, 1 do
                 local device = data.inhibitSensors[index]
-                local invert = false
+				local type_device = luup.devices[device].device_type -- On determine le SID en fonction de l'ID.
+				local inhibitor
+				local lastSet
+				
+				local invert = false
                 if (0 > device) then
                     device = 0 - device
                     invert = true
-                end
-        
-                local inhibitor, lastSet = luup.variable_get(SWP_SID, "Status", device)
-        
+				end
+				
+				if type_device == DOOR_DT then -- En fonction du SID, on determine la variable a lire. A ameliorer peut etre.
+					inhibitor, lastSet = luup.variable_get("urn:micasaverde-com:serviceId:SecuritySensor1", "Tripped", device)
+					luup.log("inhibitor DOOR = " .. inhibitor)
+				elseif type_device == SWP_DT then
+					inhibitor, lastSet = luup.variable_get("urn:upnp-org:serviceId:SwitchPower1", "Status", device)
+					luup.log("inhibitor SWP = " .. inhibitor)
+				end
+								
                 if (inhibitor == (invert and "0" or "1")) then
-                    return true
-                end
+			        return true
+				end
             end
             return false
-        end
-        
+        end 
+		
         function AutoChangeOver(lul_device)
         
             local data = readSettings(lul_device)
@@ -240,9 +300,14 @@
                 luup.log("La puissance calculee est de : " .. power .. "% et le temps de chauffe est de : " .. (tpschauf/60) .. " minutes sur " .. (Tinterval/60) .. " minutes")
                 luup.log("Puissance calculee a: " .. calnow .. ". Le chauffage s'arretera a : " .. hchauf)
        
+			if WindowOpened == 0 then 
                 luup.variable_set (SVT_SID, "TimesStamp", calnow, lul_device)
                 luup.variable_set (SVT_SID, "EndHeatTimesStamp", hchauf, lul_device)
                 luup.variable_set (HVOS_SID, "ModeState", "Heating", lul_device)
+				luup.log("WindowOpened = " .. WindowOpened)
+			else
+				luup.log("Une des fenetres ouverte empeche la reprise du chauffage. WindowOpened = " .. WindowOpened)
+			end
 				
                 
             --else

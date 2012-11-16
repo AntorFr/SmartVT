@@ -31,11 +31,6 @@
                 "Style": "numeric",
                 "Service": "urn:upnp-org:serviceId:HVAC_UserOperatingMode1",
                 "Variable": "ModeStatus"
-            },
-            "FanMode": {
-                "Style": "numeric",
-                "Service": "urn: upnp-org: serviceId: HVAC_FanOperatingMode1",
-                "Variable": "ModeStatus"
             }
         }
     },
@@ -72,6 +67,10 @@
                     "id": "6",
                     "scenegroup": "6"
                 },
+				{
+                    "id": "8",
+                    "scenegroup": "8"
+                },
                 {
                     "id": "5",
                     "scenegroup": "5"
@@ -87,6 +86,13 @@
                 },
                 {
                     "id": "4",
+                    "top": "0",
+                    "left": "1",
+                    "x": "1",
+                    "y": "4"
+                },
+                {
+                    "id": "8",
                     "top": "0",
                     "left": "1",
                     "x": "1",
@@ -306,110 +312,52 @@
                     },
                     "ControlCode": "cooling_setpoint"
                 },
-                {
-                    "ControlType": "label",
-                    "top": "0",
-                    "left": "0",
-                    "Label": {
-                        "lang_tag": "fan",
-                        "text": "Fan"
-                    },
+				{
+                    "ControlType": "variable",
+                    "text_align": "left",
                     "Display": {
-                        "Top": 60,
-                        "Left": 30,
-                        "Width": 100,
+                        "Service": "urn:upnp-org:serviceId:TemperatureSetpoint1_Heat",
+                        "Variable": "CurrentSetpoint",
+                        "Top": 90,
+                        "Left": 450,
+                        "Width": 200,
                         "Height": 20
                     }
                 },
                 {
-                    "ControlGroup": "4",
-                    "ControlType": "button",
-                    "top": "0",
-                    "left": "0",
-                    "Label": {
-                        "lang_tag": "cmd_auto",
-                        "text": "Auto"
-                    },
-                    "Display": {
-                        "Top": 90,
-                        "Left": 50,
-                        "Width": 100,
-                        "Height": 20,
-                        "Service": "urn:upnp-org:serviceId:HVAC_FanOperatingMode1",
-                        "Variable": "Mode",
-                        "Value": "Auto"
-                    },
-                    "Command": {
-                        "Service": "urn:upnp-org:serviceId:HVAC_FanOperatingMode1",
-                        "Action": "SetMode",
-                        "Parameters": [
-                            {
-                                "Name": "NewMode",
-                                "Value": "Auto"
-                            }
-                        ]
-                    },
-                    "ControlCode": "fan_auto"
+                    "ControlGroup": "2",
+					"ControlType":"input",
+                    "ID": "NewCurrentSetpoint",
+                    "Display":{
+                        "Top": 105,
+                        "Left":310,
+                        "Width": 130,
+                        "Height": 20
+                    }
                 },
                 {
-                    "ControlGroup": "4",
-                    "ControlType": "button",
-                    "top": "1",
-                    "left": "0",
+                    "ControlGroup": "3",
+					"ControlType": "button",
                     "Label": {
-                        "lang_tag": "cmd_on",
-                        "text": "On"
+                        "lang_tag": "setcurrentsetpoint",
+                        "text": "Set"
                     },
                     "Display": {
-                        "Top": 90,
-                        "Left": 160,
-                        "Width": 100,
-                        "Height": 20,
-                        "Service": "urn:upnp-org:serviceId:HVAC_FanOperatingMode1",
-                        "Variable": "Mode",
-                        "Value": "ContinuousOn"
+                        "Top": 105,
+                        "Left": 450,
+                        "Width": 75,
+                        "Height": 20
                     },
                     "Command": {
-                        "Service": "urn:upnp-org:serviceId:HVAC_FanOperatingMode1",
-                        "Action": "SetMode",
+                        "Service": "urn:upnp-org:serviceId:TemperatureSetpoint1_Heat",
+                        "Action":  "SetCurrentSetpoint",
                         "Parameters": [
                             {
-                                "Name": "NewMode",
-                                "Value": "ContinuousOn"
+                                "Name": "NewCurrentSetpoint",
+                                "ID": "NewCurrentSetpoint"
                             }
                         ]
-                    },
-                    "ControlCode": "fan_on"
-                },
-                {
-                    "ControlGroup": "4",
-                    "ControlType": "button",
-                    "top": "2",
-                    "left": "0",
-                    "Label": {
-                        "lang_tag": "cmd_cycle",
-                        "text": "Cycle"
-                    },
-                    "Display": {
-                        "Top": 90,
-                        "Left": 270,
-                        "Width": 100,
-                        "Height": 20,
-                        "Service": "urn:upnp-org:serviceId:HVAC_FanOperatingMode1",
-                        "Variable": "Mode",
-                        "Value": "PeriodicOn"
-                    },
-                    "Command": {
-                        "Service": "urn:upnp-org:serviceId:HVAC_FanOperatingMode1",
-                        "Action": "SetMode",
-                        "Parameters": [
-                            {
-                                "Name": "NewMode",
-                                "Value": "PeriodicOn"
-                            }
-                        ]
-                    },
-                    "ControlCode": "fan_circulate"
+                    }
                 },
                 {
                     "ControlType": "label",
