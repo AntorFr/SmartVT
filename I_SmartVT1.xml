@@ -322,6 +322,15 @@
     <files>L_SmartVT1.lua</files>
 	<actionList>
 		<action>
+			<serviceId>urn:micasaverde-com:serviceId:SmartVT1</serviceId>
+			<name>SetForcedMode</name>
+			<job>
+				luup.variable_set (SVT_SID, "Forced Mode", lul_settings.NewForcedMode, lul_device)
+				-- Action to do
+				return 4, 5
+			</job>
+		</action>
+		<action>
 			<serviceId>urn:upnp-org:serviceId:HVAC_UserOperatingMode1</serviceId>
 			<name>SetEnergyModeTarget</name>
 			<job>
