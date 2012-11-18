@@ -20,11 +20,6 @@
            <dataType>string</dataType>
            <defaultValue/>
        </stateVariable>
-	   <stateVariable>
-           <name>heaterMode</name>
-           <dataType>string</dataType>
-           <defaultValue/>
-       </stateVariable>
    	   <stateVariable>
            <name>powerMin</name>
            <dataType>string</dataType>
