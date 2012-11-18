@@ -38,7 +38,8 @@
 --            startup = 1
 			local data = readSettings(lul_device)
             updateStatus(lul_device)
---			register_watch(data)
+            register_watch(data.inhibitSensors)
+
 		end
         
 		function readSettings(lul_device)
@@ -113,7 +114,7 @@
 		function watch_callback(lul_device, lul_service, lul_variable, lul_value_old, lul_value_new)
 			local data = readSettings(SmartVT1_id)
 			luup.log("Watched variable changed: " .. lul_device .. " " .. lul_service .. " " .. lul_variable .. " from " .. lul_value_old .. " to " .. lul_value_new)
-			if (Inibitors(data)) then
+			if (Inibitors(data.inhibitSensors)) then
 				luup.log("Une fenetre vient de s ouvrir, il faut gerer la tempo ouverture")
 				--luup.call_timer("gestionTempoOuverture", 1, tostring(data.OpenTempo), "", tostring(lul_device))
 				luup.call_timer("gestionTempoOuverture", 1, data.OpenTempo, "", tostring(SmartVT1_id))
@@ -129,7 +130,7 @@
 			local data = readSettings(lul_device)
 			WindowOpened = 1
 			-- On verifie que Inibitors est toujours present apres la tempo pour desactiver le chauffage
-			if (Inibitors(data)) then
+			if (Inibitors(data.inhibitSensors)) then
                 luup.variable_set (HVOS_SID, "ModeState", "Idle", lul_device)
                 luup.log("Inibitor detecte : arret du chauffage")
                 SetTargetTable("0",data.heaters)
@@ -143,7 +144,7 @@
 			local data = readSettings(lul_device)
 			WindowOpened = 0
 			-- On verifie que Inibitors est toujours absent apres la tempo pour activer le chauffage
-			if not(Inibitors(data)) then
+			if not(Inibitors(data.inhibitSensors)) then
                 luup.variable_set (HVOS_SID, "ModeState", "Heating", lul_device)
                 luup.log("Inibitor n'est plus detecte et tempo ecoulee : reprise du chauffage")
                 SetTargetTable("1",data.heaters)
@@ -176,7 +177,7 @@
 			elseif (modeStatus == "AutoChangeOver") then
         
                 --[[ Gestion des capteurs
-                if (Inibitors(data)) then
+                if (Inibitors(data.inhibitSensors)) then
                     luup.variable_set (HVOS_SID, "ModeState", "Idle", lul_device)
                     luup.log("Inibitor detecte : arret du chauffage")
                     SetTargetTable("0",data.heaters)
@@ -250,10 +251,9 @@
             return Tint,Text
         end
 		
-        function Inibitors(data)
-            for index = 1, #data.inhibitSensors, 1 do
-                local device = data.inhibitSensors[index]
-				local type_device = luup.devices[device].device_type -- On determine le SID en fonction de l'ID.
+        function Inibitors(Sensors)
+            for index = 1, #Sensors, 1 do
+                local device = Sensors[index]
 				local inhibitor
 				local lastSet
 				
@@ -262,6 +262,8 @@
                     device = 0 - device
                     invert = true
 				end
+        
+                local type_device = luup.devices[device].device_type -- On determine le SID en fonction de l'ID.
 				
 				if type_device == DOOR_DID then -- En fonction du SID, on determine la variable a lire. A ameliorer peut etre.
 					inhibitor, lastSet = luup.variable_get(DOOR_SID, "Tripped", device)

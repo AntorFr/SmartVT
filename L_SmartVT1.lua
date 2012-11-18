@@ -2,25 +2,19 @@
 		local DOOR_SID =	"urn:micasaverde-com:serviceId:SecuritySensor1"
 
 		-- Fonction permettant de surveiller les variables presentes dans "inhibit Sensors"
-		function register_watch(data)
-            -- Gestion des capteurs
-            --if (Inibitors(data)) then
-             --   luup.variable_set (HVOS_SID, "ModeState", "Idle", lul_device)
-            --    luup.log("Inibitor detecte : arret du chauffage")
-            --    SetTargetTable("0",data.heaters,data.heaterMode)
-			--	luup.call_timer("updateStatus", 1, interval, "", tostring(lul_device))
-			--end		
-			for index = 1, #data.inhibitSensors, 1 do
-                local device = data.inhibitSensors[index]
-				local type_device = luup.devices[device].device_type -- On determine le SID en fonction de l'ID.
-				
-				if (0 > device) then
+		function register_watch(Sensors)
+			for index = 1, #Sensors, 1 do
+                local device = Sensors[index]
+                
+                if (0 > device) then
                     device = 0 - device
                 end
+
+				local type_device = luup.devices[device].device_type -- On determine le SID en fonction de l'ID.
 				
-				if type_device == DOOR_DT then -- En fonction du SID, on determine la variable a lire. A ameliorer peut etre.
+				if type_device == DOOR_DID then -- En fonction du SID, on determine la variable a lire. A ameliorer peut etre.
 					luup.variable_watch("watch_callback", DOOR_SID, "Tripped", device)
-				elseif type_device == SWP_DT then
+				elseif type_device == BIN_DID then
 					luup.variable_watch("watch_callback", SWP_SID, "Status", device)
 				end
 			end
