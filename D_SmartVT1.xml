@@ -161,25 +161,25 @@
 	"group_4":{
 		"cmd_1": 
 		{
-			"label": "Set Fan On",
-			"serviceId": "urn:upnp-org:serviceId:HVAC_FanOperatingMode1",
-			"action": "SetMode",
+			"label": "ForcedOn",
+			"serviceId": "urn:upnp-org:serviceId:SwitchPower1",
+			"action": "SetTarget",
 			"arguments":
 			{
-				"NewMode": "ContinuousOn"
+				"newTargetValue": "1"
 			}
 		},
 		"cmd_2": 
 		{
-			"label": "Set Fan Auto",
-			"serviceId": "urn:upnp-org:serviceId:HVAC_FanOperatingMode1",
-			"action": "SetMode",
+			"label": "ForcedOff",
+			"serviceId": "urn:upnp-org:serviceId:SwitchPower1",
+			"action": "SetTarget",
 			"arguments":
 			{
-				"NewMode": "Auto"
+				"newTargetValue": "0"
 			}
 		}
-	},
+	}
 	"group_5":{
 		"cmd_1": 
 		{
