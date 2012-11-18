@@ -97,7 +97,10 @@
             for k,id in pairs(t) do
                 local devicetype = luup.devices[id].device_type
                 if (devicetype == BIN_DID) then
-                    luup.call_action(SWP_SID, "SetTarget", { newTargetValue= target }, id)
+                    heaterStatus = luup.variable_get(SWP_SID, "Status", id) -- On recupere la variable du module
+                    if heaterStatus ~= target then
+                        luup.call_action(SWP_SID, "SetTarget", { newTargetValue= target }, id)
+                    end
                 elseif (devicetype == PIL_DID) or (devicetype == DIM_DID)  then
                     target = tostring(tonumber(target) * 100)
                     heaterStatus = luup.variable_get(DIM_SID, "LoadLevelStatus", id) -- On recupere la variable du plugin pilotwire Antor
