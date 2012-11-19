@@ -53,6 +53,11 @@
            <dataType>ui4</dataType>
            <defaultValue>0</defaultValue>
        </stateVariable>
+       <stateVariable>
+           <name>Inhibited</name>
+           <dataType>boolean</dataType>
+           <defaultValue>0</defaultValue>
+       </stateVariable>
       <stateVariable>
           <name>Forced Mode</name>
           <dataType>string</dataType>
