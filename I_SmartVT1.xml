@@ -283,10 +283,11 @@
 			if power == 0 then
                 luup.variable_set (HVOS_SID, "ModeState", "Idle", lul_device)
             else
-                luup.variable_set (SVT_SID, "TimesStamp", calnow, lul_device)
-                luup.variable_set (SVT_SID, "EndHeatTimesStamp", hchauf, lul_device)
                 luup.variable_set (HVOS_SID, "ModeState", "Heating", lul_device)
 			end
+        
+            luup.variable_set (SVT_SID, "TimesStamp", calnow, lul_device)
+            luup.variable_set (SVT_SID, "EndHeatTimesStamp", hchauf, lul_device)
         
             updateStatus(lul_device)
         end
