@@ -20,6 +20,48 @@
 			end
             return true
 		end
+        
+        function AvgTemperature(t)
+            local sum = 0
+            local count= 0
+            local temp = {}
+            for k,id in pairs(t) do
+                local temp = luup.variable_get(TEMP_SID, "CurrentTemperature", id)
+                temp = tonumber(temp) 
+                if (temp ~= nil) then
+                    sum = sum + temp
+                    count = count + 1
+                end
+            end
+        
+            if count > 0 then
+                return round((sum / count),1)
+            else
+                return false
+            end
+        
+        end
+        
+        
+        function SetTargetTable(target,t)
+            for k,id in pairs(t) do
+                local devicetype = luup.devices[id].device_type
+                if (devicetype == BIN_DID) then
+                    heaterStatus = luup.variable_get(SWP_SID, "Status", id) -- On recupere la variable du module
+                    if heaterStatus ~= target then
+                        luup.call_action(SWP_SID, "SetTarget", { newTargetValue= target }, id)
+                    end
+                elseif (devicetype == PIL_DID) or (devicetype == DIM_DID)  then
+                    target = tostring(tonumber(target) * 100)
+                    heaterStatus = luup.variable_get(DIM_SID, "LoadLevelStatus", id) -- On recupere la variable du plugin pilotwire Antor
+                    if heaterStatus ~= target then -- Si la variable du plugin pilotwire Antor est different du Target, on envoie la commande
+                        luup.call_action(DIM_SID, "SetLoadLevelTarget", { newLoadlevelTarget= target}, id)
+                    end
+                else
+                    luup.log("unknow heater device type (id :" .. id .. ")")
+                end
+            end
+        end
 		
 		function readVariableOrInit(lul_device, devicetype, name, defaultValue)
             local var = luup.variable_get(devicetype,name, lul_device)

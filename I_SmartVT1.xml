@@ -36,7 +36,7 @@
             luup.log ("Smart Virtual thermostat running...")
 --            startup = 1
 			local data = readSettings(lul_device)
-            updateStatus(lul_device)
+            RecurentUpdateStatus(lul_device)
             register_watch(data.inhibitSensors)
 
 		end
@@ -51,8 +51,8 @@
             data.heaters = toListOfNumbers(readVariableOrInit(lul_device,SVT_SID, "heaters", "" ))
 			
             -- Config Variables
-            data.OpenTempo = tostring(readVariableOrInit(lul_device,SVT_SID, "Waiting Time Open", "0" ))
-			data.CloseTempo = tostring(readVariableOrInit(lul_device,SVT_SID, "Waiting Time Close", "0" ))
+            data.OpenTempo = tonumber(readVariableOrInit(lul_device,SVT_SID, "Waiting Time Open", "0" ))
+			data.CloseTempo = tonumber(readVariableOrInit(lul_device,SVT_SID, "Waiting Time Close", "0" ))
 			data.ForcedTempo = tonumber(readVariableOrInit(lul_device,SVT_SID, "Forced Mode Duration", "3600" ))
 			data.powerMin = tonumber(readVariableOrInit(lul_device,SVT_SID, "powerMin", "15" ))
 			data.heatTimeleft = tonumber(readVariableOrInit(lul_device,SVT_SID, "heatTimeleft", "0" )) -- Temps restant en sec avant fin de chauffe
@@ -71,49 +71,7 @@
         
             return data
         end
-		
-        function AvgTemperature(t)
-            local sum = 0
-            local count= 0
-            local temp = {}
-            for k,id in pairs(t) do
-                local temp = luup.variable_get(TEMP_SID, "CurrentTemperature", id)
-                temp = tonumber(temp) 
-                if (temp ~= nil) then
-                    sum = sum + temp
-                    count = count + 1
-                end
-            end
-        
-            if count &gt; 0 then
-                return round((sum / count),1)
-            else
-                return false
-            end
-        
-        end
-        
-        
-        function SetTargetTable(target,t)
-            for k,id in pairs(t) do
-                local devicetype = luup.devices[id].device_type
-                if (devicetype == BIN_DID) then
-                    heaterStatus = luup.variable_get(SWP_SID, "Status", id) -- On recupere la variable du module
-                    if heaterStatus ~= target then
-                        luup.call_action(SWP_SID, "SetTarget", { newTargetValue= target }, id)
-                    end
-                elseif (devicetype == PIL_DID) or (devicetype == DIM_DID)  then
-                    target = tostring(tonumber(target) * 100)
-                    heaterStatus = luup.variable_get(DIM_SID, "LoadLevelStatus", id) -- On recupere la variable du plugin pilotwire Antor
-                    if heaterStatus ~= target then -- Si la variable du plugin pilotwire Antor est different du Target, on envoie la commande
-                        luup.call_action(DIM_SID, "SetLoadLevelTarget", { newLoadlevelTarget= target}, id)
-                    end
-                else
-                    luup.log("unknow heater device type (id :" .. id .. ")")
-                end
-            end
-        end
-		
+				
 		-- Fonction lancee si changement d'etat d'une variable watchee
 		function watch_callback(lul_device, lul_service, lul_variable, lul_value_old, lul_value_new)
 			local data = readSettings(SmartVT1_id)
@@ -121,7 +79,7 @@
 			if (Inibitors(data.inhibitSensors)) then
 				luup.log("Une fenetre vient de s ouvrir, il faut gerer la tempo ouverture")
 				--luup.call_timer("gestionTempoOuverture", 1, tostring(data.OpenTempo), "", tostring(lul_device))
-                if  data.OpenTempo ~= nil and data.OpenTempo &gt; 0 then
+                if  (data.OpenTempo ~= nil) and (data.OpenTempo &gt; 0) then
                     luup.call_timer("gestionTempoOuverture", 1, data.OpenTempo, "", tostring(SmartVT1_id))
                 else
                     gestionTempoOuverture(SmartVT1_id)
@@ -129,10 +87,11 @@
 			else
 				luup.log("Une fenetre vient de se fermer, il faut gerer la tempo fermeture")
 				--luup.call_timer("gestionTempoOuverture", 1, tostring(data.CloseTempo), "", tostring(lul_device))
-                if  data.CloseTempo ~= nil and data.CloseTempo &gt; 0 then
+                if  (data.CloseTempo ~= nil) and (data.CloseTempo &gt; 0) then
                     luup.call_timer("gestionTempoFermeture", 1, data.CloseTempo, "", tostring(SmartVT1_id))
                 else
                     gestionTempoFermeture(SmartVT1_id)
+                end
 			end
 		end
 		
@@ -142,10 +101,10 @@
 			local data = readSettings(lul_device)
             local ModeState = luup.variable_get (HVOS_SID, "ModeState", lul_device)
 			-- On verifie que Inibitors est toujours present apres la tempo pour desactiver le chauffage
-			if Inibitors(data.inhibitSensors) and data.inhibited == 0 then
+			if Inibitors(data.inhibitSensors) and (data.inhibited == 0) then
                 luup.variable_set (SVT_SID, "Inhibited", "1", lul_device)
                 luup.log("Inibitor detecte : arret du chauffage")
-				updateStatus()
+				updateStatus(lul_device)
             else
 				luup.log("Inibitor n'est plus detecte. Pas d'arret du chauffage")
 			end
@@ -155,17 +114,16 @@
             lul_device = tonumber(lul_device)
 			local data = readSettings(lul_device)
 			-- On verifie que Inibitors est toujours absent apres la tempo pour activer le chauffage
-			if not(Inibitors(data.inhibitSensors)) and data.inhibited == 1 then
+			if not(Inibitors(data.inhibitSensors)) and (data.inhibited == 1) then
                 luup.variable_set (SVT_SID, "Inhibited", "0", lul_device)
                 luup.log("Inibitor n'est plus detecte et tempo ecoulee : reprise du chauffage")
-				updateStatus()                
+				updateStatus(lul_device)                
             else
 				luup.log("Inibitor de nouveau detected. On ne reprend pas la regulation.")
 			end
 		end
 				        
 		function updateStatus(lul_device)
-            lul_device = tonumber(lul_device)
             local data = readSettings(lul_device)
 						        
             -- check data before process
@@ -250,8 +208,15 @@
 --				SetTargetTable("0",data.Coolers)
 			end
         
-			luup.call_timer("updateStatus", 1, interval, "", tostring(lul_device))
+			
+        
 		end
+        
+        function RecurentUpdateStatus(lul_device)
+            lul_device = tonumber(lul_device)
+            updateStatus(lul_device)
+            luup.call_timer("RecurentUpdateStatus", 1, interval, "", tostring(lul_device))
+        end
         
         function readTemp(lul_device,data)
         
@@ -302,7 +267,6 @@
 
             local Tint, Text = readTemp(lul_device,data)
         
-            --if (Tint &lt; data.heatSp) then
             local power = ((data.heatSp - Tint) * constC + (data.heatSp - Text) * constT) * 100
             if (power &lt; 0) then power = 0 end -- Limite basse
             if (power &gt; 100) then power = 100 end -- Limite haute
@@ -327,8 +291,6 @@
             updateStatus(lul_device)
         end
 
-        
-        
 	</functions>
 	<startup>virtual_thermostat_startup</startup>
     <files>L_SmartVT1.lua</files>
@@ -370,7 +332,7 @@
 				luup.variable_set (TSH_SID, "CurrentSetpoint", lul_settings.NewCurrentSetpoint, lul_device)
 				local EnergyModeStatus = luup.variable_get (HVUOM_SID, "EnergyModeStatus", lul_device)
                 local ModeStatus = luup.variable_get (HVUOM_SID, "ModeStatus", lul_device)
-				if (ModeStatus == "AutoChangeOver") and (EnergyModeStatus == "Normal") then
+				if ((ModeStatus == "AutoChangeOver") and (EnergyModeStatus == "Normal")) then
                     AutoChangeOver(lul_device)
                 end
 				return 4, 5
@@ -384,7 +346,7 @@
 				luup.variable_set (TSC_SID, "CurrentSetpoint", lul_settings.NewCurrentSetpoint, lul_device)
 				local EnergyModeStatus = luup.variable_get (HVUOM_SID, "EnergyModeStatus", lul_device)
                 local ModeStatus = luup.variable_get (HVUOM_SID, "ModeStatus", lul_device)
-				if (ModeStatus == "AutoChangeOver") and (EnergyModeStatus == "EnergySavingsMode") then
+				if ((ModeStatus == "AutoChangeOver") and (EnergyModeStatus == "EnergySavingsMode")) then
                     AutoChangeOver(lul_device)
                 end
 				return 4, 5
