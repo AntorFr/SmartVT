@@ -7,8 +7,8 @@
     "imgIconMin": "",
     "imgIconMax": "",
     "halloIconsDir": "pics/hallo",
-    "x": "4",
-    "y": "4",
+    "x": "3",
+    "y": "3",
     "inScene": "1",
     "DisplayStatus": {
         "Style": "numeric",
@@ -56,10 +56,6 @@
                     "scenegroup": "1"
                 },
                 {
-                    "id": "4",
-                    "scenegroup": "4"
-                },
-                {
                     "id": "7",
                     "scenegroup": "7"
                 },
@@ -90,21 +86,21 @@
                 {
                     "id": "7",
                     "top": "0",
-                    "left": "3",
+                    "left": "2",
                     "x": "0.5",
                     "y": "3"
                 },
                 {
                     "id": "6",
                     "top": "0",
-                    "left": "3.5",
+                    "left": "2.5",
                     "x": "0.5",
                     "y": "3"
                 },
                 {
                     "id": "5",
                     "top": "0",
-                    "left": "2",
+                    "left": "1",
                     "x": "1",
                     "y": "4"
                 }
@@ -301,26 +297,14 @@
                     },
                     "ControlCode": "cooling_setpoint"
                 },
-				{
-                    "ControlType": "variable",
-                    "text_align": "left",
-                    "Display": {
-                        "Service": "urn:upnp-org:serviceId:TemperatureSetpoint1_Heat",
-                        "Variable": "CurrentSetpoint",
-                        "Top": 90,
-                        "Left": 450,
-                        "Width": 200,
-                        "Height": 20
-                    }
-                },
                 {
                     "ControlGroup": "2",
 					"ControlType":"input",
                     "ID": "NewCurrentSetpoint",
                     "Display":{
-                        "Top": 105,
-                        "Left":310,
-                        "Width": 130,
+                        "Top": 130,
+                        "Left":480,
+                        "Width": 50,
                         "Height": 20
                     }
                 },
@@ -332,8 +316,8 @@
                         "text": "Set"
                     },
                     "Display": {
-                        "Top": 105,
-                        "Left": 450,
+                        "Top": 130,
+                        "Left": 540,
                         "Width": 75,
                         "Height": 20
                     },
@@ -348,80 +332,7 @@
                         ]
                     }
                 },
-				{
-                    "ControlType": "label",
-                    "top": "0",
-                    "left": "0",
-                    "Label": {
-                        "lang_tag": "forced_mode",
-                        "text": "Forced Mode"
-                    },
-                    "Display": {
-                        "Top": 60,
-                        "Left": 30,
-                        "Width": 100,
-                        "Height": 20
-                    }
-                },
-                {
-                    "ControlGroup": "4",
-                    "ControlType": "button",
-                    "top": "0",
-                    "left": "0",
-                    "Label": {
-                        "lang_tag": "cmd_forceoff",
-                        "text": "ForceOff"
-                    },
-                    "Display": {
-                        "Top": 90,
-                        "Left": 50,
-                        "Width": 100,
-                        "Height": 20,
-                        "Service": "urn:micasaverde-com:serviceId:SmartVT1",
-                        "Variable": "Forced Mode",
-                        "Value": "ForcedOff"
-                    },
-                    "Command": {
-                        "Service": "urn:micasaverde-com:serviceId:SmartVT1",
-                        "Action": "SetForcedMode",
-                        "Parameters": [
-                            {
-                                "Name": "NewForcedMode",
-                                "Value": "ForcedOff"
-                            }
-                        ]
-                    },
-                },
-                {
-                    "ControlGroup": "4",
-                    "ControlType": "button",
-                    "top": "1",
-                    "left": "0",
-                    "Label": {
-                        "lang_tag": "cmd_forceon",
-                        "text": "ForceOn"
-                    },
-                    "Display": {
-                        "Top": 90,
-                        "Left": 160,
-                        "Width": 100,
-                        "Height": 20,
-                        "Service": "urn:micasaverde-com:serviceId:SmartVT1",
-                        "Variable": "Forced Mode",
-                        "Value": "ForcedOn"
-                    },
-                    "Command": {
-                        "Service": "urn:micasaverde-com:serviceId:SmartVT1",
-                        "Action": "SetForcedMode",
-                        "Parameters": [
-                            {
-                                "Name": "NewForcedMode",
-                                "Value": "ForcedOn"
-                            }
-                        ]
-                    },
-                },
-				{
+		 {
                     "ControlType": "label",
                     "top": "0",
                     "left": "0",
@@ -430,7 +341,7 @@
                         "text": "Energy Save"
                     },
                     "Display": {
-                        "Top": 120,
+                        "Top": 60,
                         "Left": 30,
                         "Width": 100,
                         "Height": 20
@@ -443,10 +354,10 @@
                     "left": "0",
                     "Label": {
                         "lang_tag": "cmd_energy",
-                        "text": "Energy"
+                        "text": "Eco"
                     },
                     "Display": {
-                        "Top": 150,
+                        "Top": 90,
                         "Left": 50,
                         "Width": 100,
                         "Height": 20,
@@ -473,10 +384,10 @@
                     "left": "0",
                     "Label": {
                         "lang_tag": "cmd_normal",
-                        "text": "Normal"
+                        "text": "Confort"
                     },
                     "Display": {
-                        "Top": 150,
+                        "Top": 90,
                         "Left": 160,
                         "Width": 100,
                         "Height": 20,
@@ -504,7 +415,7 @@
                     },														
                     "text_align": "left",
                     "Display": {
-                        "Top": 200,
+                        "Top": 180,
                         "Left": 50,
                         "Width": 75,
                         "Height": 20
@@ -516,7 +427,7 @@
                     "Display": {
                         "Service": "urn:micasaverde-com:serviceId:SmartVT1",
                         "Variable": "heatTimeleft",
-                        "Top": 200,
+                        "Top": 180,
                         "Left": 270,
                         "Width": 200,
                         "Height": 20
@@ -530,7 +441,7 @@
                     },														
                     "text_align": "left",
                     "Display": {
-                        "Top": 200,
+                        "Top": 180,
                         "Left": 310,
                         "Width": 75,
                         "Height": 20
@@ -544,7 +455,7 @@
                     },														
                     "text_align": "left",
                     "Display": {
-                        "Top": 230,
+                        "Top": 210,
                         "Left": 50,
                         "Width": 75,
                         "Height": 20
@@ -556,7 +467,7 @@
                     "Display": {
                         "Service": "urn:micasaverde-com:serviceId:SmartVT1",
                         "Variable": "calTimeleft",
-                        "Top": 230,
+                        "Top": 210,
                         "Left": 270,
                         "Width": 200,
                         "Height": 20
@@ -570,7 +481,7 @@
                     },														
                     "text_align": "left",
                     "Display": {
-                        "Top": 230,
+                        "Top": 210,
                         "Left": 310,
                         "Width": 75,
                         "Height": 20
@@ -701,24 +612,6 @@
                         "suffix": "&deg;",
                         "name": "NewCurrentSetpoint"
                     }
-                }
-            }
-        },
-        "group_4": {
-            "cmd_1": {
-                "label": "Set Fan On",
-                "serviceId": "urn:upnp-org:serviceId:HVAC_FanOperatingMode1",
-                "action": "SetMode",
-                "arguments": {
-                    "NewMode": "ContinuousOn"
-                }
-            },
-            "cmd_2": {
-                "label": "Set Fan Auto",
-                "serviceId": "urn:upnp-org:serviceId:HVAC_FanOperatingMode1",
-                "action": "SetMode",
-                "arguments": {
-                    "NewMode": "Auto"
                 }
             }
         },
