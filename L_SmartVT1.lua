@@ -51,6 +51,11 @@
                     if heaterStatus ~= target then
                         luup.call_action(SWP_SID, "SetTarget", { newTargetValue= target }, id)
                     end
+                elseif (devicetype == VSW_DID) then
+                    heaterStatus = luup.variable_get(VSW_SID, "Status", id) -- On recupere la variable du module
+                    if heaterStatus ~= target then
+                        luup.call_action(VSW_SID, "SetTarget", { newTargetValue= target }, id)
+                    end
                 elseif (devicetype == PIL_DID) or (devicetype == DIM_DID)  then
                     target = tostring(tonumber(target) * 100)
                     heaterStatus = luup.variable_get(DIM_SID, "LoadLevelStatus", id) -- On recupere la variable du plugin pilotwire Antor

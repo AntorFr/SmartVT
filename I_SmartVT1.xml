@@ -13,6 +13,7 @@
         local SWP_SID =		"urn:upnp-org:serviceId:SwitchPower1"
 		local DIM_SID =		"urn:upnp-org:serviceId:Dimming1"
 		local DOOR_SID = 	"urn:micasaverde-com:serviceId:SecuritySensor1"
+        local VSW_SID =     "urn:upnp-org:serviceId:VSwitch1"
 		local SmartVT1_id = tonumber(lul_device)
         
         -- DeviceID
@@ -20,6 +21,7 @@
         local BIN_DID =     "urn:schemas-upnp-org:device:BinaryLight:1"
         local PIL_DID =     "urn:antor-fr:device:PilotWire:1"
         local DIM_DID =     "urn:schemas-upnp-org:device:DimmableLight:1"
+        local VSW_DID =     "urn:schemas-upnp-org:device:VSwitch:1"
         
 		local DELAY = 20 -- Seconds
 		local DEFAULT_HEAT_SP = 21
@@ -263,7 +265,10 @@
 				if type_device == DOOR_DID then -- En fonction du SID, on determine la variable a lire. A ameliorer peut etre.
 					inhibitor, lastSet = luup.variable_get(DOOR_SID, "Tripped", device)
 					luup.log("inhibitor DOOR = " .. inhibitor)
-				elseif type_device == BIN_DID then
+                elseif type_device == VSW_DID then
+                    inhibitor, lastSet = luup.variable_get(VSW_SID, "Status", device)
+                    luup.log("inhibitor DOOR = " .. inhibitor)
+                elseif type_device == BIN_DID then
 					inhibitor, lastSet = luup.variable_get(SWP_SID, "Status", device)
 					luup.log("inhibitor SWP = " .. inhibitor)
 				end
