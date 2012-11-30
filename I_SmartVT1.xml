@@ -18,6 +18,7 @@
         
         -- DeviceID
         local DOOR_DID =	"urn:schemas-micasaverde-com:device:DoorSensor:1"
+        local MOTI_DID =    "urn:schemas-micasaverde-com:device:MotionSensor:1"
         local BIN_DID =     "urn:schemas-upnp-org:device:BinaryLight:1"
         local PIL_DID =     "urn:antor-fr:device:PilotWire:1"
         local DIM_DID =     "urn:schemas-upnp-org:device:DimmableLight:1"
@@ -25,13 +26,15 @@
         
 		local DELAY = 20 -- Seconds
 		local DEFAULT_HEAT_SP = 21
-		local DEFAULT_COOL_SP = 25
+		local DEFAULT_COOL_SP = 18
 		local DEFAULT_HG_SP = 8
 		local constC = 0.6
 		local constT = 0.01
 		local interval = "1m"
 		local Tinterval = 3600 -- Plage de chauffe
 		local heaterStatus = "0"
+        local DeltaMax = 2 -- Seuil de tolerence au dessus de la consigne
+        
 		--		local startup -- Jeton permettant de savoir si l'on vient de rafraichir la Vera. Si oui, on relance le calcul.
         
 		function virtual_thermostat_startup (lul_device)
@@ -137,7 +140,7 @@
 --          end
         
         
-            readTemp(lul_device,data)
+            local Tint, Text = readTemp(lul_device,data)
 			
 			if (data.ModeStatus == "HeatOn") then
         
@@ -165,10 +168,12 @@
                 end
 				
 			elseif (data.ModeStatus == "CoolOn") then
+        
 				luup.variable_set (HVOS_SID, "ModeState", "Cooling", lul_device)
                 luup.variable_set (SVT_SID, "heatTimeleft", "∞", lul_device)
                 luup.variable_set (SVT_SID, "calTimeleft", "∞", lul_device)
 				SetTargetTable("1",data.Coolers)
+        
 			elseif (data.ModeStatus == "AutoChangeOver") then
         
 
@@ -198,12 +203,16 @@
 				luup.variable_set (SVT_SID, "heatTimeleft", data.heatTimeleft, lul_device)
 				luup.variable_set (SVT_SID, "calTimeleft", data.calTimeleft, lul_device)
 				
-                if(data.inhibited == 1) then
+                if (data.inhibited == 1) then
                     luup.log("Inibitor detecte : arret du chauffage")
                     SetTargetTable("0",data.heaters)
                     luup.log("HEATER OFF")
                 elseif (ModeState == "Heating") then
-                    if( os.time() &gt;= data.EndHeatTimesStamp ) then
+        
+                    if ( Tint &gt;= (Consigne(data) + DeltaMax)) then -- temperature de consigne + Delta depasse : On relance la chargement auto
+                        AutoChangeOver(lul_device)
+                        return
+                    elseif( os.time() &gt;= data.EndHeatTimesStamp ) then
                         SetTargetTable("0",data.heaters)
 						luup.log("HEATER OFF")
                     else
@@ -236,11 +245,11 @@
         
         function readTemp(lul_device,data)
         
-            local Tint = AvgTemperature(data.InSensors) or data.heatSp
+            local Tint = AvgTemperature(data.InSensors) or math.max(data.heatSp,data.coolSp)
             luup.log("La temperature moyenne interieure est de " .. Tint .. " DEGC")
             luup.variable_set (TEMP_SID, "CurrentTemperature", Tint, lul_device)
         
-            local Text = AvgTemperature(data.OutSensors) or data.heatSp
+            local Text = AvgTemperature(data.OutSensors) or math.max(data.heatSp,data.coolSp)
             luup.log("La temperature moyenne exterieure est de " .. Text .. " DEGC")
             --luup.variable_set (TEMP_SID, "CurrentTemperature", Text, lul_device)
         
@@ -262,7 +271,7 @@
         
                 local type_device = luup.devices[device].device_type -- On determine le SID en fonction de l'ID.
 				
-				if type_device == DOOR_DID then -- En fonction du SID, on determine la variable a lire. A ameliorer peut etre.
+				if type_device == DOOR_DID or type_device == MOTI_DID then -- En fonction du SID, on determine la variable a lire. A ameliorer peut etre.
 					inhibitor, lastSet = luup.variable_get(DOOR_SID, "Tripped", device)
 					luup.log("inhibitor DOOR = " .. inhibitor)
                 elseif type_device == VSW_DID then
@@ -298,16 +307,10 @@
         end
 		
         function AutoChangeOver(lul_device)
-            local consigne
+
             local data = readSettings(lul_device)
-
             local Tint, Text = readTemp(lul_device,data)
-
-            if data.EnergyModeStatus == "EnergySavingsMode" then
-                consigne = data.coolSp
-            else
-                consigne = data.heatSp
-            end
+            local consigne = Consigne(data)
         
             local power = ((consigne - Tint) * constC + (consigne - Text) * constT) * 100
             if (power &lt; 0) then power = 0 end -- Limite basse
