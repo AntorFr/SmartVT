@@ -22,8 +22,8 @@
        </stateVariable>
    	   <stateVariable>
            <name>powerMin</name>
-           <dataType>string</dataType>
-           <defaultValue/>
+           <dataType>ui4</dataType>
+           <defaultValue>5</defaultValue>
        </stateVariable>
    	   <stateVariable>
            <name>heatTimeleft</name>
@@ -40,6 +40,12 @@
            <name>Forced Mode Duration</name>
            <dataType>ui4</dataType>
             <defaultValue>1200</defaultValue>
+       </stateVariable>
+       <stateVariable>
+           <Optional/>
+           <name>Calculation period</name>
+           <dataType>ui4</dataType>
+           <defaultValue>3600</defaultValue>
        </stateVariable>
        <stateVariable>
            <Optional/>
