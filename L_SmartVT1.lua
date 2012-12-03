@@ -12,7 +12,7 @@
 
 				local type_device = luup.devices[device].device_type -- On determine le SID en fonction de l'ID.
 				
-				if type_device == DOOR_DID then -- En fonction du SID, on determine la variable a lire. A ameliorer peut etre.
+				if type_device == DOOR_DID or type_device == MOTI_DID then -- En fonction du SID, on determine la variable a lire. A ameliorer peut etre.
 					luup.variable_watch("watch_callback", DOOR_SID, "Tripped", device)
 				elseif type_device == BIN_DID then
 					luup.variable_watch("watch_callback", SWP_SID, "Status", device)
@@ -21,16 +21,29 @@
             return true
 		end
         
+        function Consigne(data)
+            if data.EnergyModeStatus == "EnergySavingsMode" then
+                return data.coolSp
+            else
+                return data.heatSp
+            end
+        end
+        
         function AvgTemperature(t)
             local sum = 0
             local count= 0
             local temp = {}
             for k,id in pairs(t) do
-                local temp = luup.variable_get(TEMP_SID, "CurrentTemperature", id)
+                
+                local temp, time = luup.variable_get(TEMP_SID, "CurrentTemperature", id)
                 temp = tonumber(temp) 
                 if (temp ~= nil) then
-                    sum = sum + temp
-                    count = count + 1
+                    if (os.time()-time > 900) then
+                        luup.log(" Attention, la sonde " .. luup.attr_get("name",id) .. "(" .. id .. ")" .. " n'a pas ete mise a jour depuis plus de 15 minutes")
+                    else
+                        sum = sum + temp
+                        count = count + 1
+                    end
                 end
             end
         
@@ -50,6 +63,11 @@
                     heaterStatus = luup.variable_get(SWP_SID, "Status", id) -- On recupere la variable du module
                     if heaterStatus ~= target then
                         luup.call_action(SWP_SID, "SetTarget", { newTargetValue= target }, id)
+                    end
+                elseif (devicetype == VSW_DID) then
+                    heaterStatus = luup.variable_get(VSW_SID, "Status", id) -- On recupere la variable du module
+                    if heaterStatus ~= target then
+                        luup.call_action(VSW_SID, "SetTarget", { newTargetValue= target }, id)
                     end
                 elseif (devicetype == PIL_DID) or (devicetype == DIM_DID)  then
                     target = tostring(tonumber(target) * 100)
