@@ -16,6 +16,11 @@
            <defaultValue/>
        </stateVariable>
        <stateVariable>
+           <name>AutoLearning</name>
+           <dataType>string</dataType>
+           <defaultValue/>
+       </stateVariable>
+       <stateVariable>
            <name>heaters</name>
            <dataType>string</dataType>
            <defaultValue/>
@@ -24,6 +29,16 @@
            <name>powerMin</name>
            <dataType>ui4</dataType>
            <defaultValue>5</defaultValue>
+       </stateVariable>
+   	   <stateVariable>
+           <name>ConstC</name>
+           <dataType>ui4</dataType>
+           <defaultValue>60</defaultValue>
+       </stateVariable>
+   	   <stateVariable>
+           <name>ConstT</name>
+           <dataType>ui4</dataType>
+           <defaultValue>1</defaultValue>
        </stateVariable>
    	   <stateVariable>
            <name>heatTimeleft</name>

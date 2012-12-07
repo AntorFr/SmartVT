@@ -28,8 +28,8 @@
 		local DEFAULT_HEAT_SP = 21
 		local DEFAULT_COOL_SP = 18
 		local DEFAULT_HG_SP = 8
-		local constC = 0.6
-		local constT = 0.01
+		local constC = 60
+		local constT = 1
 		local interval = "1m"
 		local heaterStatus = "0"
         local DeltaMax = 2 -- Seuil de tolerence au dessus de la consigne
@@ -60,6 +60,9 @@
 			data.ForcedTempo = tonumber(readVariableOrInit(lul_device,SVT_SID, "Forced Mode Duration", "3600" ))
 			data.powerMin = tonumber(readVariableOrInit(lul_device,SVT_SID, "powerMin", "5" ))
             data.CalcPeriod = tonumber(readVariableOrInit(lul_device,SVT_SID, "Calculation period", "3600" ))
+        
+            data.constC = tonumber(readVariableOrInit(lul_device,SVT_SID, "ConstC", "60" ))
+            data.constT = tonumber(readVariableOrInit(lul_device,SVT_SID, "ConstT", "1" ))
 
 
             data.heatSp = tonumber(readVariableOrInit(lul_device,TSH_SID, "CurrentSetpoint", DEFAULT_HEAT_SP ))
@@ -72,9 +75,9 @@
             data.ModeStatus = readVariableOrInit(lul_device,HVUOM_SID, "ModeStatus", "Off" )
             data.heatTimeleft = tonumber(readVariableOrInit(lul_device,SVT_SID, "heatTimeleft", "0" )) -- Temps restant en sec avant fin de chauffe
             data.calTimeleft = tonumber(readVariableOrInit(lul_device,SVT_SID, "calTimeleft", "0" )) -- Temps restant en sec avec nouveau calcul de regul
-        
             data.EndHeatTimesStamp = tonumber(readVariableOrInit(lul_device,SVT_SID, "EndHeatTimesStamp", "0" ))
             data.TimesStamp = tonumber(readVariableOrInit(lul_device,SVT_SID, "TimesStamp", "0" ))
+            data.AutoLearning = toListOfNumbers(readVariableOrInit(lul_device,SVT_SID, "AutoLearning", "1,0,0" )) -- poid,OldTint,%
         
             return data
         end
@@ -147,21 +150,23 @@
                 -- Si une tempo est paramétré pour le mode forced :
                 if data.ForcedTempo ~= nil and data.ForcedTempo &gt; 0 then
                     -- Gestion du tempo du mode forced
-                    if ( os.time() &gt;=  (data.TimesStamp + data.ForcedTempo )) then
+                    local now = os.time()
+                    if ( now &gt;=  data.EndHeatTimesStamp) then
                         -- Fin du mode forced
                         luup.call_action(HVUOM_SID, "SetModeTarget", { NewModeTarget = "AutoChangeOver" }, lul_device)
                         return
                     else
+                        data.heatTimeleft = data.EndHeatTimesStamp - now -- Temps restant avec fin de chauffe
+        
+                        luup.variable_set (SVT_SID, "heatTimeleft", data.heatTimeleft, lul_device)
+                        luup.variable_set (SVT_SID, "calTimeleft", data.heatTimeleft, lul_device)
+        
                         luup.variable_set (HVOS_SID, "ModeState", "Heating", lul_device)
                         SetTargetTable("1",data.heaters)
                     end
                 else
-                    local now = os.time()
-                    data.heatTimeleft = data.EndHeatTimesStamp - now -- Temps restant avec fin de chauffe
-                    if (data.heatTimeleft &lt; 0) then data.heatTimeleft = 0 end
-        
-                    luup.variable_set (SVT_SID, "heatTimeleft", data.heatTimeleft, lul_device)
-                    luup.variable_set (SVT_SID, "calTimeleft", data.heatTimeleft, lul_device)
+                    luup.variable_set (SVT_SID, "heatTimeleft", "∞", lul_device)
+                    luup.variable_set (SVT_SID, "calTimeleft", "∞", lul_device)
         
                     luup.variable_set (HVOS_SID, "ModeState", "Heating", lul_device)
                     SetTargetTable("1",data.heaters)
@@ -170,9 +175,9 @@
 			elseif (data.ModeStatus == "CoolOn") then
         
 				luup.variable_set (HVOS_SID, "ModeState", "Cooling", lul_device)
-                luup.variable_set (SVT_SID, "heatTimeleft", "∞", lul_device)
-                luup.variable_set (SVT_SID, "calTimeleft", "∞", lul_device)
-			--	SetTargetTable("1",data.Coolers)
+--              luup.variable_set (SVT_SID, "heatTimeleft", "∞", lul_device)
+--              luup.variable_set (SVT_SID, "calTimeleft", "∞", lul_device)
+--				SetTargetTable("1",data.Coolers)
         
 			elseif (data.ModeStatus == "AutoChangeOver") then
         
@@ -306,30 +311,42 @@
             updateStatus(lul_device)
         end
 		
-        function AutoChangeOver(lul_device)
+        function AutoChangeOver(lul_device,learn)
 
             local data = readSettings(lul_device)
+            local calnow = os.time()
+        
+            if learn~=nil and learn == true and #data.AutoLearning == 3  then
+                local OldTint = 
+        
+            end
+        
             local Tint, Text = readTemp(lul_device,data)
             local consigne = Consigne(data)
         
-            local power = ((consigne - Tint) * constC + (consigne - Text) * constT) * 100
+            local power = (consigne - Tint) * data.constC + (consigne - Text) * data.constT
             if (power &lt; 0) then power = 0 end -- Limite basse
             if (power &gt; 100) then power = 100 end -- Limite haute
             if (power &gt; 0) and (power &lt;= data.powerMin) then power = data.powerMin end -- Seuil mini de power
             local tpschauf = power * (data.CalcPeriod/100)
             tpschauf = math.floor(tpschauf)
-            local calnow = os.time()
+
             --local hchauf = os.time(calnow + tpschauf)
             local hchauf = GetTime(calnow,tpschauf) -- Needed to works with Vera 1 (single-precision floats)
         
             luup.log("La puissance calculee est de : " .. power .. "% et le temps de chauffe est de : " .. (tpschauf/60) .. " minutes sur " .. (data.CalcPeriod/60) .. " minutes pour une consigne de " .. consigne)
             luup.log("Puissance calculee a: " .. calnow .. ". Le chauffage s'arretera a : " .. hchauf)
-       
+        
 			if power == 0 then
                 luup.variable_set (HVOS_SID, "ModeState", "Idle", lul_device)
             else
                 luup.variable_set (HVOS_SID, "ModeState", "Heating", lul_device)
 			end
+        
+            data.AutoLearning[2] = Tint
+            data.AutoLearning[3] = (consigne - Tint) * data.constC
+        
+            luup.variable_set (SVT_SID, "AutoLearning", fromListOfNumbers(data.AutoLearning), lul_device)
         
             luup.variable_set (SVT_SID, "TimesStamp", calnow, lul_device)
             luup.variable_set (SVT_SID, "EndHeatTimesStamp", hchauf, lul_device)
