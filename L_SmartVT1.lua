@@ -41,6 +41,7 @@
                     if (os.time()-time > 900) then
                         luup.log(" Attention, la sonde " .. luup.attr_get("name",id) .. "(" .. id .. ")" .. " n'a pas ete mise a jour depuis plus de 15 minutes")
                     else
+                        luup.log ("Sonde " .. id .. " : " .. os.time()-time)
                         sum = sum + temp
                         count = count + 1
                     end
@@ -96,7 +97,7 @@
         
         function toListOfNumbers(s)
             t = {}
-            for v in string.gmatch(s, "(-?[0-9]+)") do
+            for v in string.gmatch(s, "(-?[0-9\.]+)") do
                 table.insert(t, tonumber(v))
             end
             return t

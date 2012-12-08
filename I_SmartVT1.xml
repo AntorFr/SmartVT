@@ -32,7 +32,7 @@
 		local constT = 1
 		local interval = "1m"
 		local heaterStatus = "0"
-        local DeltaMax = 2 -- Seuil de tolerence au dessus de la consigne
+        local DeltaMax = 1 -- Seuil de tolerence au dessus de la consigne
         
 		--		local startup -- Jeton permettant de savoir si l'on vient de rafraichir la Vera. Si oui, on relance le calcul.
         
@@ -58,7 +58,7 @@
             data.OpenTempo = tonumber(readVariableOrInit(lul_device,SVT_SID, "Waiting Time Open", "0" ))
 			data.CloseTempo = tonumber(readVariableOrInit(lul_device,SVT_SID, "Waiting Time Close", "0" ))
 			data.ForcedTempo = tonumber(readVariableOrInit(lul_device,SVT_SID, "Forced Mode Duration", "3600" ))
-			data.powerMin = tonumber(readVariableOrInit(lul_device,SVT_SID, "powerMin", "5" ))
+			data.powerMin = tonumber(readVariableOrInit(lul_device,SVT_SID, "powerMin", "0" ))
             data.CalcPeriod = tonumber(readVariableOrInit(lul_device,SVT_SID, "Calculation period", "3600" ))
         
             data.constC = tonumber(readVariableOrInit(lul_device,SVT_SID, "ConstC", "60" ))
@@ -77,7 +77,7 @@
             data.calTimeleft = tonumber(readVariableOrInit(lul_device,SVT_SID, "calTimeleft", "0" )) -- Temps restant en sec avec nouveau calcul de regul
             data.EndHeatTimesStamp = tonumber(readVariableOrInit(lul_device,SVT_SID, "EndHeatTimesStamp", "0" ))
             data.TimesStamp = tonumber(readVariableOrInit(lul_device,SVT_SID, "TimesStamp", "0" ))
-            data.AutoLearning = toListOfNumbers(readVariableOrInit(lul_device,SVT_SID, "AutoLearning", "1,0,0" )) -- poid,OldTint,%
+            data.AutoLearning = toListOfNumbers(readVariableOrInit(lul_device,SVT_SID, "AutoLearning", "0,1,1,0,0,0" )) -- init - poid I,poid E, Tint init, Text init,%
         
             return data
         end
@@ -187,7 +187,7 @@
                 if ( os.time() &gt;=  (data.TimesStamp + data.CalcPeriod )) then
                     -- On relance le calcul de la regulation tous les data.CalcPeriod secondes
                     luup.log("ostime sup a " .. tempcal .. " = " .. data.TimesStamp .. "  +  " .. data.CalcPeriod)
-					AutoChangeOver(lul_device)
+					AutoChangeOver(lul_device,true)
                     return
 				else
 				luup.log("ostime inf a " .. tempcal .. " = " .. data.TimesStamp .. "  +  " .. data.CalcPeriod)
@@ -215,7 +215,7 @@
                 elseif (ModeState == "Heating") then
         
                     if ( Tint &gt;= (Consigne(data) + DeltaMax)) then -- temperature de consigne + Delta depasse : On relance la chargement auto
-                        AutoChangeOver(lul_device)
+                        AutoChangeOver(lul_device,true)
                         return
                     elseif( os.time() &gt;= data.EndHeatTimesStamp ) then
                         SetTargetTable("0",data.heaters)
@@ -250,11 +250,11 @@
         
         function readTemp(lul_device,data)
         
-            local Tint = AvgTemperature(data.InSensors) or math.max(data.heatSp,data.coolSp)
+            local Tint = AvgTemperature(data.InSensors) or Consigne(data)
             luup.log("La temperature moyenne interieure est de " .. Tint .. " DEGC")
             luup.variable_set (TEMP_SID, "CurrentTemperature", Tint, lul_device)
         
-            local Text = AvgTemperature(data.OutSensors) or math.max(data.heatSp,data.coolSp)
+            local Text = AvgTemperature(data.OutSensors) or Consigne(data)
             luup.log("La temperature moyenne exterieure est de " .. Text .. " DEGC")
             --luup.variable_set (TEMP_SID, "CurrentTemperature", Text, lul_device)
         
@@ -310,15 +310,67 @@
         
             updateStatus(lul_device)
         end
+        
+        function AutoCallib(lul_device,data)
+            
+            local Tint, Text = readTemp(lul_device,data)
+            local consigne = Consigne(data)
+            local calnow = os.time()
+            luup.log( readVariableOrInit(lul_device,SVT_SID, "AutoLearning", "0,1,1,0,0,0" ) .. " = " .. #data.AutoLearning)
+            if #data.AutoLearning ~= 6 then
+                luup.log("AutoLearning data corrupted : re-init it")
+                luup.variable_set (SVT_SID, "AutoLearning", "0,1,1,0,0,0", lul_device)
+        
+                return true
+            elseif data.AutoLearning[1] ~= 1 then
+                luup.log("data not initilised")
+                return false
+            elseif data.AutoLearning[6] == 0 then
+                luup.log("nothing to learn")
+                return
+            elseif data.AutoLearning[6] == 100 and Tint &lt; consigne then
+                luup.log("heater was on max but consigne was not reached so we dont learn")
+                return false
+            elseif Tint &gt; data.AutoLearning[4] and consigne &gt; data.AutoLearning[4]  then -- Si Tinterieur sup a Tinterieur initial et Consigne sup a Tinterieur initial
+                luup.log("Learn ConstC")
+                local ConstC = data.constC * ((consigne - data.AutoLearning[4]) / (Tint - data.AutoLearning[4] )) * (calnow - data.TimesStamp) / data.CalcPeriod
+                luup.log("New calculte ConstC is ".. ConstC )
+                ConstC = round((data.constC * data.AutoLearning[2] + ConstC) / (data.AutoLearning[2] +1),1)
+                data.AutoLearning[2] = math.min(data.AutoLearning[2] +1 , 50)
+                luup.log("New ponderate ConstC is ".. ConstC )
+        
+                luup.variable_set (SVT_SID, "AutoLearning", fromListOfNumbers(data.AutoLearning), lul_device)
+                luup.variable_set (SVT_SID, "ConstC", ConstC , lul_device)
+        
+                return true
+            elseif consigne ~= Tint then
+                luup.log("Learn ConstT")
+                local ConstT = data.constT + (( consigne - Tint) / ( consigne - Text )) * data.constC * (calnow - data.TimesStamp) / data.CalcPeriod
+                luup.log("New calculte ConstT is ".. ConstT )
+                ConstT = round((data.constT * data.AutoLearning[3] + ConstT) / (data.AutoLearning[3] +1),1)
+                if ConstT  &lt; 0 then ConstT = 0 end 
+                data.AutoLearning[3] = math.min(data.AutoLearning[3] +1 , 50)
+                luup.log("New ponderate ConstT is ".. ConstT )
+        
+                luup.variable_set (SVT_SID, "AutoLearning", fromListOfNumbers(data.AutoLearning), lul_device)
+                luup.variable_set (SVT_SID, "ConstT", ConstT , lul_device)
+        
+                return true
+            else
+                return false
+            end
+        end
 		
         function AutoChangeOver(lul_device,learn)
 
             local data = readSettings(lul_device)
             local calnow = os.time()
         
-            if learn~=nil and learn == true and #data.AutoLearning == 3  then
-                local OldTint = 
-        
+            if learn~=nil and learn == true  then
+                if AutoCallib(lul_device,data) then
+                    -- refresh data
+                    data = readSettings(lul_device)
+                end
             end
         
             local Tint, Text = readTemp(lul_device,data)
@@ -342,15 +394,16 @@
             else
                 luup.variable_set (HVOS_SID, "ModeState", "Heating", lul_device)
 			end
-        
-            data.AutoLearning[2] = Tint
-            data.AutoLearning[3] = (consigne - Tint) * data.constC
-        
-            luup.variable_set (SVT_SID, "AutoLearning", fromListOfNumbers(data.AutoLearning), lul_device)
-        
+                
             luup.variable_set (SVT_SID, "TimesStamp", calnow, lul_device)
             luup.variable_set (SVT_SID, "EndHeatTimesStamp", hchauf, lul_device)
         
+            data.AutoLearning[1] = 1
+            data.AutoLearning[4] = Tint
+            data.AutoLearning[5] = Text
+            data.AutoLearning[6] = power
+            luup.variable_set (SVT_SID, "AutoLearning", fromListOfNumbers(data.AutoLearning), lul_device)
+            
             updateStatus(lul_device)
         end
 
