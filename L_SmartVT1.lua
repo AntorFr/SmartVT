@@ -38,10 +38,10 @@
                 local temp, time = luup.variable_get(TEMP_SID, "CurrentTemperature", id)
                 temp = tonumber(temp) 
                 if (temp ~= nil) then
-                    if (os.time()-time > 900) then
-                        luup.log(" Attention, la sonde " .. luup.attr_get("name",id) .. "(" .. id .. ")" .. " n'a pas ete mise a jour depuis plus de 15 minutes")
+                    debuglog("Sonde " .. id .. " : " .. os.time()-time)
+                    if (os.time()-time > 900) and false then -- Attention : desactivation de la securite
+                        debuglog(" Attention, la sonde " .. luup.attr_get("name",id) .. "(" .. id .. ")" .. " n'a pas ete mise a jour depuis plus de 15 minutes")
                     else
-                        luup.log ("Sonde " .. id .. " : " .. os.time()-time)
                         sum = sum + temp
                         count = count + 1
                     end
@@ -77,7 +77,7 @@
                         luup.call_action(DIM_SID, "SetLoadLevelTarget", { newLoadlevelTarget= target}, id)
                     end
                 else
-                    luup.log("unknow heater device type (id :" .. id .. ")")
+                    debuglog("unknow heater device type (id :" .. id .. ")")
                 end
             end
         end
@@ -129,4 +129,10 @@
         local newSec = os.time({year=dr.year, month=dr.month, day=dr.day, hour=dr.hour, min=dr.min, sec=(dr.sec+Sec)})
         
         return newSec
+    end
+    
+    function debuglog(log)
+        if debug then
+            luup.log( "SmartVT : " .. log)
+        end
     end
