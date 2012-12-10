@@ -1,5 +1,5 @@
 {
-    "flashicon": "icons/Thermostat.png",
+    "flashicon": "http://mios.antor.fr/Icons/SmartVT.png",
     "iconText": "1",
     "imgIconBody": "pics/devices/Thermostat_BODY.png",
     "imgIconDimmable": "",
@@ -384,7 +384,7 @@
                     "left": "0",
                     "Label": {
                         "lang_tag": "cmd_normal",
-                        "text": "Confort"
+                        "text": "Comfort"
                     },
                     "Display": {
                         "Top": 90,
