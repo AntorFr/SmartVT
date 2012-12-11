@@ -39,8 +39,8 @@
                 temp = tonumber(temp) 
                 if (temp ~= nil) then
                     debuglog("Sonde " .. id .. " : " .. os.time()-time)
-                    if (os.time()-time > 900) and false then -- Attention : desactivation de la securite
-                        debuglog(" Attention, la sonde " .. luup.attr_get("name",id) .. "(" .. id .. ")" .. " n'a pas ete mise a jour depuis plus de 15 minutes")
+                    if (os.time()-time > 1800) and false then -- Attention : desactivation de la securite
+                        debuglog(" Attention, la sonde " .. luup.attr_get("name",id) .. "(" .. id .. ")" .. " n'a pas ete mise a jour depuis plus de 30 minutes")
                     else
                         sum = sum + temp
                         count = count + 1

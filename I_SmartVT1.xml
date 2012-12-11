@@ -344,7 +344,7 @@
                 luup.variable_set (SVT_SID, "ConstC", ConstC , lul_device)
         
                 return true
-            elseif consigne ~= Tint and consigne &gt; data.AutoLearning[5] then
+            elseif consigne &gt; data.AutoLearning[5] then
                 debuglog("Learn ConstT")
                 local ConstT = data.constT + (( consigne - Tint) / ( consigne - data.AutoLearning[5] )) * data.constC * (calnow - data.TimesStamp) / data.CalcPeriod
                 debuglog("New calculte ConstT is ".. ConstT )
