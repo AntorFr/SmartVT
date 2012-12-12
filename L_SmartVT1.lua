@@ -29,17 +29,21 @@
             end
         end
         
-        function AvgTemperature(t)
+        function AvgTemperature(t,TimeSecu)
             local sum = 0
             local count= 0
             local temp = {}
+            if TimeSecu == nil or tonumber(TimeSecu) == nil then
+                TimeSecu = 0
+            end
+
             for k,id in pairs(t) do
                 
                 local temp, time = luup.variable_get(TEMP_SID, "CurrentTemperature", id)
                 temp = tonumber(temp) 
                 if (temp ~= nil) then
                     debuglog("Sonde " .. id .. " : " .. os.time()-time)
-                    if (os.time()-time > 1800) and false then -- Attention : desactivation de la securite
+                    if (os.time()-time > TimeSecu) and TimeSecu > 0 then
                         debuglog(" Attention, la sonde " .. luup.attr_get("name",id) .. "(" .. id .. ")" .. " n'a pas ete mise a jour depuis plus de 30 minutes")
                     else
                         sum = sum + temp

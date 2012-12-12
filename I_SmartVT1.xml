@@ -78,7 +78,7 @@
             data.calTimeleft = tonumber(readVariableOrInit(lul_device,SVT_SID, "calTimeleft", "0" )) -- Temps restant en sec avec nouveau calcul de regul
             data.EndHeatTimesStamp = tonumber(readVariableOrInit(lul_device,SVT_SID, "EndHeatTimesStamp", "0" ))
             data.TimesStamp = tonumber(readVariableOrInit(lul_device,SVT_SID, "TimesStamp", "0" ))
-            data.AutoLearning = toListOfNumbers(readVariableOrInit(lul_device,SVT_SID, "AutoLearning", "0,1,1,0,0,0" )) -- init - poid I,poid E, Tint init, Text init,%
+            data.AutoLearning = toListOfNumbers(readVariableOrInit(lul_device,SVT_SID, "AutoLearning", "2,1,1,0,0,0" )) -- init - poid I,poid E, Tint init, Text init,%
         
             return data
         end
@@ -251,11 +251,11 @@
         
         function readTemp(lul_device,data)
         
-            local Tint = AvgTemperature(data.InSensors) or Consigne(data)
+            local Tint = AvgTemperature(data.InSensors,data.CalcPeriod*2) or Consigne(data)
             debuglog("La temperature moyenne interieure est de " .. Tint .. " DEGC")
             luup.variable_set (TEMP_SID, "CurrentTemperature", Tint, lul_device)
         
-            local Text = AvgTemperature(data.OutSensors) or Consigne(data)
+            local Text = AvgTemperature(data.OutSensors,data.CalcPeriod*24) or Consigne(data)
             debuglog("La temperature moyenne exterieure est de " .. Text .. " DEGC")
             --luup.variable_set (TEMP_SID, "CurrentTemperature", Text, lul_device)
         
@@ -317,7 +317,7 @@
             local Tint, Text = readTemp(lul_device,data)
             local consigne = Consigne(data)
             local calnow = os.time()
-            debuglog( readVariableOrInit(lul_device,SVT_SID, "AutoLearning", "0,1,1,0,0,0" ) .. " = " .. #data.AutoLearning)
+            debuglog( readVariableOrInit(lul_device,SVT_SID, "AutoLearning", "2,1,1,0,0,0" ) .. " = " .. #data.AutoLearning)
             if #data.AutoLearning ~= 6 then
                 debuglog("AutoLearning data corrupted : re-init it")
                 luup.variable_set (SVT_SID, "AutoLearning", "0,1,1,0,0,0", lul_device)
@@ -377,7 +377,7 @@
             local Tint, Text = readTemp(lul_device,data)
             local consigne = Consigne(data)
         
-            local power = (consigne - Tint) * data.constC + (consigne - Text) * data.constT
+            local power = round((consigne - Tint) * data.constC + (consigne - Text) * data.constT,1)
             if (power &lt; 0) then power = 0 end -- Limite basse
             if (power &gt; 100) then power = 100 end -- Limite haute
             if (power &gt; 0) and (power &lt;= data.powerMin) then power = data.powerMin end -- Seuil mini de power
