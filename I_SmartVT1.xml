@@ -399,11 +399,14 @@
             luup.variable_set (SVT_SID, "TimesStamp", calnow, lul_device)
             luup.variable_set (SVT_SID, "EndHeatTimesStamp", hchauf, lul_device)
         
-            data.AutoLearning[1] = 1
-            data.AutoLearning[4] = Tint
-            data.AutoLearning[5] = Text
-            data.AutoLearning[6] = power
-            luup.variable_set (SVT_SID, "AutoLearning", fromListOfNumbers(data.AutoLearning), lul_device)
+            if data.AutoLearning[1] &lt; 2 then
+                data.AutoLearning[1] = 1
+                data.AutoLearning[4] = Tint
+                data.AutoLearning[5] = Text
+                data.AutoLearning[6] = power
+                luup.variable_set (SVT_SID, "AutoLearning", fromListOfNumbers(data.AutoLearning), lul_device)
+            end
+
             
             updateStatus(lul_device)
         end
