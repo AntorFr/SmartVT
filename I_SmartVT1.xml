@@ -30,7 +30,7 @@
 		local DEFAULT_HG_SP = 8
 		local constC = 60
 		local constT = 1
-		local interval = "1m"
+--		local interval = "1m"
 		local heaterStatus = "0"
         local DeltaMax = 1 -- Seuil de tolerence au dessus de la consigne
         local debug = true
@@ -138,10 +138,10 @@
             local data = readSettings(lul_device)
 						        
             -- check data before process
---          if (data.InSensors == nil or #data.InSensors &lt; 1 or data.heaters == nil or #data.heaters &lt; 1) then
---              debuglog("Configuration erronee")
---              return nil
---          end
+            if (data.InSensors == nil or #data.InSensors &lt; 1 or data.heaters == nil or #data.heaters &lt; 1) then
+                debuglog("Configuration erronee")
+                return nil
+            end
         
         
             local Tint, Text = readTemp(lul_device,data)
@@ -166,8 +166,8 @@
                         SetTargetTable("1",data.heaters)
                     end
                 else
-                    luup.variable_set (SVT_SID, "heatTimeleft", "∞", lul_device)
-                    luup.variable_set (SVT_SID, "calTimeleft", "∞", lul_device)
+                    luup.variable_set(SVT_SID, "heatTimeleft", "∞", lul_device)
+                    luup.variable_set(SVT_SID, "calTimeleft", "∞", lul_device)
         
                     luup.variable_set (HVOS_SID, "ModeState", "Heating", lul_device)
                     SetTargetTable("1",data.heaters)
@@ -176,8 +176,8 @@
 			elseif (data.ModeStatus == "CoolOn") then
         
 				luup.variable_set (HVOS_SID, "ModeState", "Cooling", lul_device)
---              luup.variable_set (SVT_SID, "heatTimeleft", "∞", lul_device)
---              luup.variable_set (SVT_SID, "calTimeleft", "∞", lul_device)
+                luup.variable_set (SVT_SID, "heatTimeleft", "∞", lul_device)
+                luup.variable_set (SVT_SID, "calTimeleft", "∞", lul_device)
 --				SetTargetTable("1",data.Coolers)
         
 			elseif (data.ModeStatus == "AutoChangeOver") then
@@ -245,8 +245,8 @@
         
         function RecurentUpdateStatus(lul_device)
             lul_device = tonumber(lul_device)
-            updateStatus(lul_device)
-            luup.call_timer("RecurentUpdateStatus", 1, interval, "", tostring(lul_device))
+            luup.call_timer("RecurentUpdateStatus", 1, "1m", "", tostring(lul_device))
+            pcall(updateStatus,lul_device)
         end
         
         function readTemp(lul_device,data)
