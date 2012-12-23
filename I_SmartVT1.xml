@@ -23,6 +23,7 @@
         local PIL_DID =     "urn:antor-fr:device:PilotWire:1"
         local DIM_DID =     "urn:schemas-upnp-org:device:DimmableLight:1"
         local VSW_DID =     "urn:schemas-upnp-org:device:VSwitch:1"
+        local HEAT_DID =    "urn:schemas-upnp-org:device:Heater:1"
         
 		local DELAY = 20 -- Seconds
 		local DEFAULT_HEAT_SP = 21

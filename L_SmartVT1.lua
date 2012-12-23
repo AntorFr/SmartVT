@@ -80,6 +80,14 @@
                     if heaterStatus ~= target then -- Si la variable du plugin pilotwire Antor est different du Target, on envoie la commande
                         luup.call_action(DIM_SID, "SetLoadLevelTarget", { newLoadlevelTarget= target}, id)
                     end
+                elseif (devicetype == HEAT_DID) then
+                    heaterStatus = luup.variable_get(HVUOM_SID, "ModeStatus", id) -- On recupere la variable du module
+                    if target == "1" and heaterStatus ~= "HeatOn"  then -- Si la variable du plugin pilotwire Antor est different du Target, on envoie la commande
+                        luup.call_action(HVUOM_SID, "SetModeTarget", { NewModeTarget= "HeatOn" }, id)
+                    elseif target == "0" and heaterStatus ~= "Off"  then
+                        luup.call_action(HVUOM_SID, "SetModeTarget", { NewModeTarget= "Off" }, id)
+                    end
+
                 else
                     debuglog("unknow heater device type (id :" .. id .. ")")
                 end
