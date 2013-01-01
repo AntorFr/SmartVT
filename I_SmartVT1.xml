@@ -198,7 +198,7 @@
         
                 -- Gestion des commandes
                 local ModeState = luup.variable_get (HVOS_SID, "ModeState", lul_device)
-				local data = readSettings(lul_device) -- On relit les data pour charger la nouvelle valeur EndHeatTimeStamp, les timeleft...
+				data = readSettings(lul_device) -- On relit les data pour charger la nouvelle valeur EndHeatTimeStamp, les timeleft...
 				debuglog("os.time() = " .. os.time() .. " et data.EndHeatTimesStamp = " .. data.EndHeatTimesStamp)
 				debuglog("ModeState = " .. ModeState)
 				local now = os.time()
@@ -214,6 +214,15 @@
                     debuglog("Inibitor detecte : arret du chauffage")
                     SetTargetTable("0",data.heaters)
                     debuglog("HEATER OFF")
+        
+                    local inhibited, time = Inibitors(data.inhibitSensors)
+                    if not(inhibited) and (time + data.CloseTempo) &lt; os.time() then -- la tempo est terminee (securite pour assurer la reprise du chauffage)
+                        luup.variable_set (SVT_SID, "Inhibited", "0", lul_device)
+                        debuglog("Inibitor n'est plus detecte et tempo ecoulee : reprise du chauffage")
+                        luup.call_timer("updateStatus", 1, "1", "", tostring(lul_device))
+                        return
+                    end
+        
                 elseif (ModeState == "Heating") then
         
                     if ( Tint &gt;= (Consigne(data) + DeltaMax)) then -- temperature de consigne + Delta depasse : On relance la chargement auto
@@ -264,10 +273,13 @@
         end
 		
         function Inibitors(Sensors)
+            local GlobalLastSet = 0
+        
             for index = 1, #Sensors, 1 do
                 local device = Sensors[index]
 				local inhibitor
 				local lastSet
+                
 				
 				local invert = false
         
@@ -278,14 +290,17 @@
         
                 local type_device = luup.devices[device].device_type -- On determine le SID en fonction de l'ID.
 				
-				if type_device == DOOR_DID or type_device == MOTI_DID then -- En fonction du SID, on determine la variable a lire. A ameliorer peut etre.
+				if type_device == DOOR_DID or type_device == MOTI_DID then -- En fonction du SID, on determine la variable a lire.
 					inhibitor, lastSet = luup.variable_get(DOOR_SID, "Tripped", device)
+                    GlobalLastSet = math.max(GlobalLastSet,tonumber(lastSet))
 					debuglog("inhibitor DOOR = " .. inhibitor)
                 elseif type_device == VSW_DID then
                     inhibitor, lastSet = luup.variable_get(VSW_SID, "Status", device)
+                    GlobalLastSet = math.max(GlobalLastSet,tonumber(lastSet))
                     debuglog("inhibitor DOOR = " .. inhibitor)
                 elseif type_device == BIN_DID then
 					inhibitor, lastSet = luup.variable_get(SWP_SID, "Status", device)
+                    GlobalLastSet = math.max(GlobalLastSet,tonumber(lastSet))
 					debuglog("inhibitor SWP = " .. inhibitor)
 				end
 								
@@ -293,7 +308,7 @@
 			        return true
 				end
             end
-            return false
+            return false, GlobalLastSet
         end
         
         function HeatOn(lul_device)
