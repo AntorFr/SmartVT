@@ -35,6 +35,7 @@
 		local heaterStatus = "0"
         local DeltaMax = 1 -- Seuil de tolerence au dessus de la consigne
         local debug = true
+        local Grapher = "http://192.168.10.4//Srv02/Graph/logger/temp.php"
         
 		--		local startup -- Jeton permettant de savoir si l'on vient de rafraichir la Vera. Si oui, on relance le calcul.
         
@@ -44,7 +45,8 @@
 			local data = readSettings(lul_device)
             RecurentUpdateStatus(lul_device)
             register_watch(data.inhibitSensors)
-
+        
+            return true,"ok","Smart Virtual Thermostat"
 		end
         
 		function readSettings(lul_device)
@@ -376,6 +378,32 @@
                 return false
             end
         end
+        
+        function GraphIt(lul_device)
+            local data = readSettings(lul_device)
+
+            local consigne = Consigne(data) * 100
+            local TempInt = luup.variable_get("urn:upnp-org:serviceId:TemperatureSensor1", "CurrentTemperature", data.InSensors[1])
+            local TempExt = luup.variable_get("urn:upnp-org:serviceId:TemperatureSensor1", "CurrentTemperature", data.OutSensors[1])
+            local TempTherm = luup.variable_get("urn:upnp-org:serviceId:TemperatureSensor1", "CurrentTemperature", lul_device)
+            local Chauffe = luup.variable_get("urn:upnp-org:serviceId:SwitchPower1", "Status", data.heaters[1] )
+            local Inhibited = data.inhibited * 800 + 1000
+        
+            local Vera_id = ''
+            local Device_id = lul_device
+        
+            TempInt = tonumber(TempInt) * 100
+            TempExt = tonumber(TempExt) * 100
+            TempTherm = tonumber(TempExt) * 100
+            Chauffe = tonumber(Chauffe) * 800 + 1000
+        
+            local lul_update = Grapher .. '?Vera_id=' .. Vera_id .. '&amp;Device_id=' ..  Device_id .. '&amp;TempExt=' .. TempExt .. '&amp;TempInt=' ..  TempInt .. '&amp;TempTherm=' ..  TempTherm .. '&amp;Consigne=' ..  Consigne  .. '&amp;Chauffe=' ..  Chauffe .. '&amp;Inhibited=' ..  Inhibited
+        
+            luup.inet.wget(lul_update)
+        
+            return true
+        
+        end
 		
         function AutoChangeOver(lul_device,learn)
 
@@ -497,6 +525,14 @@
 			<job>
 				luup.variable_set (SWP_SID, "Target", lul_settings.newTargetValue, lul_device)
 				luup.variable_set (SWP_SID, "Status", lul_settings.newTargetValue, lul_device)
+				return 4, 5
+			</job>
+		</action>
+		<action>
+			<serviceId>urn:upnp-org:serviceId:SwitchPower1</serviceId>
+			<name>GraphIt</name>
+			<job>
+				GraphIt(lul_device)
 				return 4, 5
 			</job>
 		</action>
