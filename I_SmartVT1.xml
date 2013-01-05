@@ -35,7 +35,7 @@
 		local heaterStatus = "0"
         local DeltaMax = 1 -- Seuil de tolerence au dessus de la consigne
         local debug = true
-        local Grapher = "http://192.168.10.4//Srv02/Graph/logger/temp.php"
+        local Grapher = "http://mios.antor.fr/Graph/logger/temp.php"
         
 		--		local startup -- Jeton permettant de savoir si l'on vient de rafraichir la Vera. Si oui, on relance le calcul.
         
@@ -380,24 +380,48 @@
         end
         
         function GraphIt(lul_device)
+            local TempExt, Chauffe
             local data = readSettings(lul_device)
 
             local consigne = Consigne(data) * 100
             local TempInt = luup.variable_get("urn:upnp-org:serviceId:TemperatureSensor1", "CurrentTemperature", data.InSensors[1])
-            local TempExt = luup.variable_get("urn:upnp-org:serviceId:TemperatureSensor1", "CurrentTemperature", data.OutSensors[1])
             local TempTherm = luup.variable_get("urn:upnp-org:serviceId:TemperatureSensor1", "CurrentTemperature", lul_device)
-            local Chauffe = luup.variable_get("urn:upnp-org:serviceId:SwitchPower1", "Status", data.heaters[1] )
-            local Inhibited = data.inhibited * 800 + 1000
+            local Inhibited = (data.inhibited or 0) * 800 + 1000
         
-            local Vera_id = ''
+            local id = data.heaters[1]
+            local devicetype = luup.devices[id].device_type
+            if (devicetype == BIN_DID) then
+                Chauffe = luup.variable_get(SWP_SID, "Status", id)
+                Chauffe = tonumber(Chauffe) * 800 + 1000
+            elseif (devicetype == VSW_DID) then
+                Chauffe = luup.variable_get(VSW_SID, "Status", id) -- On recupere la variable du module
+                Chauffe = tonumber(Chauffe) * 800 + 1000
+            elseif (devicetype == PIL_DID) or (devicetype == DIM_DID)  then
+                Chauffe = luup.variable_get(DIM_SID, "LoadLevelStatus", id)
+                Chauffe = tonumber(Chauffe) * 8 + 1000
+            elseif (devicetype == HEAT_DID) then
+                local heaterStatus = luup.variable_get(HVUOM_SID, "ModeStatus", id)
+                if heaterStatus == "HeatOn"  then
+                    Chauffe = 1800
+                elseif heaterStatus == "Off"  then
+                    Chauffe = 1000
+                end
+            end
+        
+            if #data.OutSensors &gt; 0 then
+               TempExt = luup.variable_get("urn:upnp-org:serviceId:TemperatureSensor1", "CurrentTemperature", data.OutSensors[1])
+               TempExt = tonumber(TempExt) * 100
+            else
+                TempExt = 0
+            end
+        
+            local Vera_id = luup.pk_accesspoint
             local Device_id = lul_device
         
             TempInt = tonumber(TempInt) * 100
-            TempExt = tonumber(TempExt) * 100
-            TempTherm = tonumber(TempExt) * 100
-            Chauffe = tonumber(Chauffe) * 800 + 1000
+            TempTherm = tonumber(TempTherm) * 100
         
-            local lul_update = Grapher .. '?Vera_id=' .. Vera_id .. '&amp;Device_id=' ..  Device_id .. '&amp;TempExt=' .. TempExt .. '&amp;TempInt=' ..  TempInt .. '&amp;TempTherm=' ..  TempTherm .. '&amp;Consigne=' ..  Consigne  .. '&amp;Chauffe=' ..  Chauffe .. '&amp;Inhibited=' ..  Inhibited
+            local lul_update = Grapher .. '?Vera_id=' .. Vera_id .. '&amp;Device_id=' ..  Device_id .. '&amp;TempExt=' .. TempExt .. '&amp;TempInt=' ..  TempInt .. '&amp;TempTherm=' ..  TempTherm .. '&amp;Consigne=' ..  consigne  .. '&amp;Chauffe=' ..  Chauffe .. '&amp;Inhibited=' ..  Inhibited
         
             luup.inet.wget(lul_update)
         
@@ -529,7 +553,7 @@
 			</job>
 		</action>
 		<action>
-			<serviceId>urn:upnp-org:serviceId:SwitchPower1</serviceId>
+			<serviceId>urn:micasaverde-com:serviceId:SmartVT1</serviceId>
 			<name>GraphIt</name>
 			<job>
 				GraphIt(lul_device)
