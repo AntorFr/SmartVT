@@ -35,6 +35,7 @@
 		local heaterStatus = "0"
         local DeltaMax = 1 -- Seuil de tolerence au dessus de la consigne
         local debug = true
+        local Grapher = "http://mios.antor.fr/Graph/logger/temp.php"
         
 		--		local startup -- Jeton permettant de savoir si l'on vient de rafraichir la Vera. Si oui, on relance le calcul.
         
@@ -44,7 +45,8 @@
 			local data = readSettings(lul_device)
             RecurentUpdateStatus(lul_device)
             register_watch(data.inhibitSensors)
-
+        
+            return true,"ok","Smart Virtual Thermostat"
 		end
         
 		function readSettings(lul_device)
@@ -198,7 +200,7 @@
         
                 -- Gestion des commandes
                 local ModeState = luup.variable_get (HVOS_SID, "ModeState", lul_device)
-				local data = readSettings(lul_device) -- On relit les data pour charger la nouvelle valeur EndHeatTimeStamp, les timeleft...
+				data = readSettings(lul_device) -- On relit les data pour charger la nouvelle valeur EndHeatTimeStamp, les timeleft...
 				debuglog("os.time() = " .. os.time() .. " et data.EndHeatTimesStamp = " .. data.EndHeatTimesStamp)
 				debuglog("ModeState = " .. ModeState)
 				local now = os.time()
@@ -214,6 +216,15 @@
                     debuglog("Inibitor detecte : arret du chauffage")
                     SetTargetTable("0",data.heaters)
                     debuglog("HEATER OFF")
+        
+                    local inhibited, time = Inibitors(data.inhibitSensors)
+                    if not(inhibited) and (time + data.CloseTempo) &lt; os.time() then -- la tempo est terminee (securite pour assurer la reprise du chauffage)
+                        luup.variable_set (SVT_SID, "Inhibited", "0", lul_device)
+                        debuglog("Inibitor n'est plus detecte et tempo ecoulee : reprise du chauffage")
+                        luup.call_timer("updateStatus", 1, "1", "", tostring(lul_device))
+                        return
+                    end
+        
                 elseif (ModeState == "Heating") then
         
                     if ( Tint &gt;= (Consigne(data) + DeltaMax)) then -- temperature de consigne + Delta depasse : On relance la chargement auto
@@ -264,10 +275,13 @@
         end
 		
         function Inibitors(Sensors)
+            local GlobalLastSet = 0
+        
             for index = 1, #Sensors, 1 do
                 local device = Sensors[index]
 				local inhibitor
 				local lastSet
+                
 				
 				local invert = false
         
@@ -278,14 +292,17 @@
         
                 local type_device = luup.devices[device].device_type -- On determine le SID en fonction de l'ID.
 				
-				if type_device == DOOR_DID or type_device == MOTI_DID then -- En fonction du SID, on determine la variable a lire. A ameliorer peut etre.
+				if type_device == DOOR_DID or type_device == MOTI_DID then -- En fonction du SID, on determine la variable a lire.
 					inhibitor, lastSet = luup.variable_get(DOOR_SID, "Tripped", device)
+                    GlobalLastSet = math.max(GlobalLastSet,tonumber(lastSet))
 					debuglog("inhibitor DOOR = " .. inhibitor)
                 elseif type_device == VSW_DID then
                     inhibitor, lastSet = luup.variable_get(VSW_SID, "Status", device)
+                    GlobalLastSet = math.max(GlobalLastSet,tonumber(lastSet))
                     debuglog("inhibitor DOOR = " .. inhibitor)
                 elseif type_device == BIN_DID then
 					inhibitor, lastSet = luup.variable_get(SWP_SID, "Status", device)
+                    GlobalLastSet = math.max(GlobalLastSet,tonumber(lastSet))
 					debuglog("inhibitor SWP = " .. inhibitor)
 				end
 								
@@ -293,7 +310,7 @@
 			        return true
 				end
             end
-            return false
+            return false, GlobalLastSet
         end
         
         function HeatOn(lul_device)
@@ -360,6 +377,56 @@
             else
                 return false
             end
+        end
+        
+        function GraphIt(lul_device)
+            local TempExt, Chauffe
+            local data = readSettings(lul_device)
+
+            local consigne = Consigne(data) * 100
+            local TempInt = luup.variable_get("urn:upnp-org:serviceId:TemperatureSensor1", "CurrentTemperature", data.InSensors[1])
+            local TempTherm = luup.variable_get("urn:upnp-org:serviceId:TemperatureSensor1", "CurrentTemperature", lul_device)
+            local Inhibited = (data.inhibited or 0) * 800 + 1000
+        
+            local id = data.heaters[1]
+            local devicetype = luup.devices[id].device_type
+            if (devicetype == BIN_DID) then
+                Chauffe = luup.variable_get(SWP_SID, "Status", id)
+                Chauffe = tonumber(Chauffe) * 800 + 1000
+            elseif (devicetype == VSW_DID) then
+                Chauffe = luup.variable_get(VSW_SID, "Status", id) -- On recupere la variable du module
+                Chauffe = tonumber(Chauffe) * 800 + 1000
+            elseif (devicetype == PIL_DID) or (devicetype == DIM_DID)  then
+                Chauffe = luup.variable_get(DIM_SID, "LoadLevelStatus", id)
+                Chauffe = tonumber(Chauffe) * 8 + 1000
+            elseif (devicetype == HEAT_DID) then
+                local heaterStatus = luup.variable_get(HVUOM_SID, "ModeStatus", id)
+                if heaterStatus == "HeatOn"  then
+                    Chauffe = 1800
+                elseif heaterStatus == "Off"  then
+                    Chauffe = 1000
+                end
+            end
+        
+            if #data.OutSensors &gt; 0 then
+               TempExt = luup.variable_get("urn:upnp-org:serviceId:TemperatureSensor1", "CurrentTemperature", data.OutSensors[1])
+               TempExt = tonumber(TempExt) * 100
+            else
+                TempExt = 0
+            end
+        
+            local Vera_id = luup.pk_accesspoint
+            local Device_id = lul_device
+        
+            TempInt = tonumber(TempInt) * 100
+            TempTherm = tonumber(TempTherm) * 100
+        
+            local lul_update = Grapher .. '?Vera_id=' .. Vera_id .. '&amp;Device_id=' ..  Device_id .. '&amp;TempExt=' .. TempExt .. '&amp;TempInt=' ..  TempInt .. '&amp;TempTherm=' ..  TempTherm .. '&amp;Consigne=' ..  consigne  .. '&amp;Chauffe=' ..  Chauffe .. '&amp;Inhibited=' ..  Inhibited
+        
+            luup.inet.wget(lul_update)
+        
+            return true
+        
         end
 		
         function AutoChangeOver(lul_device,learn)
@@ -482,6 +549,14 @@
 			<job>
 				luup.variable_set (SWP_SID, "Target", lul_settings.newTargetValue, lul_device)
 				luup.variable_set (SWP_SID, "Status", lul_settings.newTargetValue, lul_device)
+				return 4, 5
+			</job>
+		</action>
+		<action>
+			<serviceId>urn:micasaverde-com:serviceId:SmartVT1</serviceId>
+			<name>GraphIt</name>
+			<job>
+				GraphIt(lul_device)
 				return 4, 5
 			</job>
 		</action>
