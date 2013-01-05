@@ -97,5 +97,8 @@
    	<action>
       <name>SetForcedMode</name>
     </action>
+    <action>
+      <name>GraphIt</name>
+    </action>
    </actionList>
 </scpd>
