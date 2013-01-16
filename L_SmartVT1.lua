@@ -37,17 +37,32 @@
                 TimeSecu = 0
             end
 
+            -- BatteryDate ("urn:micasaverde-com:serviceId:HaDevice1")
+
             for k,id in pairs(t) do
                 
-                local temp, time = luup.variable_get(TEMP_SID, "CurrentTemperature", id)
-                temp = tonumber(temp) 
+                local temp, time = luup.variable_get(TEMP_SID, "CurrentTemperature", id)                
+                temp = tonumber(temp)
+                
+                local BatDate = luup.variable_get(HAD_SID, "BatteryDate", id)
+                local MasterId = luup.devices[id].device_num_parent
+
+                if tonumber(MasterId) ~= nil and BatDate == nil then
+                    BatDate = luup.variable_get(HAD_SID, "BatteryDate", MasterId)
+                end
+                
                 if (temp ~= nil) then
-                    debuglog("Sonde " .. id .. " : " .. os.time()-time)
-                    if (os.time()-time > TimeSecu) and TimeSecu > 0 then
-                        debuglog(" Attention, la sonde " .. luup.attr_get("name",id) .. "(" .. id .. ")" .. " n'a pas ete mise a jour depuis plus de 30 minutes")
-                    else
+                    debuglog("Sonde " .. id .. " : " .. os.time()-time) 
+                    if (TimeSecu == 0) or (os.time()-time <= TimeSecu) then
+                        debuglog("Sonde " .. luup.attr_get("name",id) .. "(" .. id .. ")" .. "correctement lue (1)")
                         sum = sum + temp
                         count = count + 1
+                    elseif BatDate ~= nil and (os.time()-BatDate <= TimeSecu) then
+                        debuglog("Sonde " .. luup.attr_get("name",id) .. "(" .. id .. ")" .. "correctement lue (2)")
+                        sum = sum + temp
+                        count = count + 1
+                    else
+                        debuglog(" Attention, la sonde " .. luup.attr_get("name",id) .. "(" .. id .. ")" .. " n'a pas ete mise a jour depuis plus de " .. TimeSecu .. " secondes")
                     end
                 end
             end
