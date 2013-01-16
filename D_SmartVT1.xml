@@ -6,7 +6,10 @@
   </specVersion>
   <device>
     <deviceType>urn:antor-fr:device:HVAC_ZoneThermostat:1</deviceType>
+    <friendlyName>Smart Virtual Device</friendlyName>
 	<staticJson>D_SmartVT1.json</staticJson>
+    <Category_Num>5</Category_Num>
+    <SubCategory_Num>2</SubCategory_Num>
     <serviceList>
       <service>
         <Optional/>

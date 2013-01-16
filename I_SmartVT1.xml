@@ -14,6 +14,7 @@
 		local DIM_SID =		"urn:upnp-org:serviceId:Dimming1"
 		local DOOR_SID = 	"urn:micasaverde-com:serviceId:SecuritySensor1"
         local VSW_SID =     "urn:upnp-org:serviceId:VSwitch1"
+        local HAD_SID =     "urn:micasaverde-com:serviceId:HaDevice1"
 		local SmartVT1_id = tonumber(lul_device)
         
         -- DeviceID
@@ -34,7 +35,7 @@
 --		local interval = "1m"
 		local heaterStatus = "0"
         local DeltaMax = 1 -- Seuil de tolerence au dessus de la consigne
-        local debug = true
+        local debug = false
         local Grapher = "http://mios.antor.fr/Graph/logger/temp.php"
         
 		--		local startup -- Jeton permettant de savoir si l'on vient de rafraichir la Vera. Si oui, on relance le calcul.
