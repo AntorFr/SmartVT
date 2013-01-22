@@ -57,7 +57,7 @@
                         debuglog("Sonde " .. luup.attr_get("name",id) .. "(" .. id .. ")" .. "correctement lue (1)")
                         sum = sum + temp
                         count = count + 1
-                    elseif BatDate ~= nil and (os.time()-BatDate <= TimeSecu) then
+                    elseif BatDate ~= nil and (os.time()-BatDate <= (TimeSecu * 4)) then
                         debuglog("Sonde " .. luup.attr_get("name",id) .. "(" .. id .. ")" .. "correctement lue (2)")
                         sum = sum + temp
                         count = count + 1

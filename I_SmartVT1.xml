@@ -258,7 +258,7 @@
         
         function RecurentUpdateStatus(lul_device)
             lul_device = tonumber(lul_device)
-            luup.call_timer("RecurentUpdateStatus", 1, "1m", "", tostring(lul_device))
+            luup.call_timer("RecurentUpdateStatus", 1, "2m", "", tostring(lul_device))
             pcall(updateStatus,lul_device)
         end
         
@@ -558,6 +558,14 @@
 			<name>GraphIt</name>
 			<job>
 				GraphIt(lul_device)
+				return 4, 5
+			</job>
+		</action>
+		<action>
+			<serviceId>urn:micasaverde-com:serviceId:SmartVT1</serviceId>
+			<name>UpdateStatus</name>
+			<job>
+				updateStatus(lul_device)
 				return 4, 5
 			</job>
 		</action>
