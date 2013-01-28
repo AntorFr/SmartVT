@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <implementation>
 	<functions>
-		-- Smart Virtual Thermostat v1.0c
+		-- Smart Virtual Thermostat v2.0
         
         -- ServiceID
         local TEMP_SID =    "urn:upnp-org:serviceId:TemperatureSensor1"
@@ -47,6 +47,13 @@
             RecurentUpdateStatus(lul_device)
             register_watch(data.inhibitSensors)
         
+            -- check data before process
+            if (data.InSensors == nil or #data.InSensors &lt; 1 or data.heaters == nil or #data.heaters &lt; 1) then
+                debuglog("Configuration erronee")
+                luup.task('Configuration erronée',2,'Smart Virtual Thermostat', -1)
+                return false
+            end
+        
             return true,"ok","Smart Virtual Thermostat"
 		end
         
@@ -72,6 +79,8 @@
 
             data.heatSp = tonumber(readVariableOrInit(lul_device,TSH_SID, "CurrentSetpoint", DEFAULT_HEAT_SP ))
             data.coolSp = tonumber(readVariableOrInit(lul_device,TSC_SID, "CurrentSetpoint", DEFAULT_COOL_SP ))
+        
+            data.Grapher = luup.variable_get(SVT_SID,"Grapher", lul_device) or "http://mios.antor.fr/Graph/logger/temp.php"
         
             -- internal Variables
             data.ForcedModeState = readVariableOrInit(lul_device,SVT_SID, "Forced Mode", "ForcedOff" )
@@ -144,6 +153,7 @@
             -- check data before process
             if (data.InSensors == nil or #data.InSensors &lt; 1 or data.heaters == nil or #data.heaters &lt; 1) then
                 debuglog("Configuration erronee")
+                luup.task('Configuration erronée',2,'Smart Virtual Thermostat', -1)
                 return nil
             end
         
@@ -385,11 +395,11 @@
             local data = readSettings(lul_device)
 
             local consigne = Consigne(data) * 100
-            local TempInt = luup.variable_get("urn:upnp-org:serviceId:TemperatureSensor1", "CurrentTemperature", data.InSensors[1])
+            local TempInt = luup.variable_get("urn:upnp-org:serviceId:TemperatureSensor1", "CurrentTemperature", math.abs(data.InSensors[1]))
             local TempTherm = luup.variable_get("urn:upnp-org:serviceId:TemperatureSensor1", "CurrentTemperature", lul_device)
             local Inhibited = (data.inhibited or 0) * 800 + 1000
         
-            local id = data.heaters[1]
+            local id = math.abs(data.heaters[1])
             local devicetype = luup.devices[id].device_type
             if (devicetype == BIN_DID) then
                 Chauffe = luup.variable_get(SWP_SID, "Status", id)
