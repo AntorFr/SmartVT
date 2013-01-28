@@ -100,5 +100,8 @@
     <action>
       <name>GraphIt</name>
     </action>
+    <action>
+      <name>UpdateStatus</name>
+    </action>
    </actionList>
 </scpd>

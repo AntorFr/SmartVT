@@ -4,15 +4,11 @@
 		-- Fonction permettant de surveiller les variables presentes dans "inhibit Sensors"
 		function register_watch(Sensors)
 			for index = 1, #Sensors, 1 do
-                local device = Sensors[index]
-                
-                if (0 > device) then
-                    device = 0 - device
-                end
 
+                local device = math.abs(Sensors[index])
 				local type_device = luup.devices[device].device_type -- On determine le SID en fonction de l'ID.
 				
-				if type_device == DOOR_DID or type_device == MOTI_DID then -- En fonction du SID, on determine la variable a lire. A ameliorer peut etre.
+				if type_device == DOOR_DID or type_device == MOTI_DID then -- En fonction du SID, on determine la variable a lire.
 					luup.variable_watch("watch_callback", DOOR_SID, "Tripped", device)
 				elseif type_device == BIN_DID then
 					luup.variable_watch("watch_callback", SWP_SID, "Status", device)
@@ -41,6 +37,12 @@
 
             for k,id in pairs(t) do
                 
+                local invert = false
+                if (0 > id) then
+                    id = 0 - id
+                    invert = true
+                end
+                
                 local temp, time = luup.variable_get(TEMP_SID, "CurrentTemperature", id)                
                 temp = tonumber(temp)
                 
@@ -57,10 +59,14 @@
                         debuglog("Sonde " .. luup.attr_get("name",id) .. "(" .. id .. ")" .. "correctement lue (1)")
                         sum = sum + temp
                         count = count + 1
-                    elseif BatDate ~= nil and (os.time()-BatDate <= TimeSecu) then
+                    elseif BatDate ~= nil and (os.time()-BatDate <= (TimeSecu * 4)) then
                         debuglog("Sonde " .. luup.attr_get("name",id) .. "(" .. id .. ")" .. "correctement lue (2)")
                         sum = sum + temp
                         count = count + 1
+                    elseif invert then -- désactivation sécurité
+                        debuglog("Sonde " .. luup.attr_get("name",id) .. "(" .. id .. ")" .. "correctement lue (3)")
+                        sum = sum + temp
+                        count = count + 1                        
                     else
                         debuglog(" Attention, la sonde " .. luup.attr_get("name",id) .. "(" .. id .. ")" .. " n'a pas ete mise a jour depuis plus de " .. TimeSecu .. " secondes")
                     end
