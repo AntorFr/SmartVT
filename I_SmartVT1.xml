@@ -36,7 +36,6 @@
 		local heaterStatus = "0"
         local DeltaMax = 1 -- Seuil de tolerence au dessus de la consigne
         local debug = false
-        local Grapher = "http://mios.antor.fr/Graph/logger/temp.php"
         
 		--		local startup -- Jeton permettant de savoir si l'on vient de rafraichir la Vera. Si oui, on relance le calcul.
         
@@ -432,8 +431,9 @@
             TempInt = tonumber(TempInt) * 100
             TempTherm = tonumber(TempTherm) * 100
         
-            local lul_update = Grapher .. '?Vera_id=' .. Vera_id .. '&amp;Device_id=' ..  Device_id .. '&amp;TempExt=' .. TempExt .. '&amp;TempInt=' ..  TempInt .. '&amp;TempTherm=' ..  TempTherm .. '&amp;Consigne=' ..  consigne  .. '&amp;Chauffe=' ..  Chauffe .. '&amp;Inhibited=' ..  Inhibited
+            local lul_update = data.Grapher .. '?Vera_id=' .. Vera_id .. '&amp;Device_id=' ..  Device_id .. '&amp;TempExt=' .. TempExt .. '&amp;TempInt=' ..  TempInt .. '&amp;TempTherm=' ..  TempTherm .. '&amp;Consigne=' ..  consigne  .. '&amp;Chauffe=' ..  Chauffe .. '&amp;Inhibited=' ..  Inhibited
         
+            debuglog("Grapher : " .. lul_update)
             luup.inet.wget(lul_update)
         
             return true
