@@ -4,15 +4,11 @@
 		-- Fonction permettant de surveiller les variables presentes dans "inhibit Sensors"
 		function register_watch(Sensors)
 			for index = 1, #Sensors, 1 do
-                local device = Sensors[index]
-                
-                if (0 > device) then
-                    device = 0 - device
-                end
 
+                local device = math.abs(Sensors[index])
 				local type_device = luup.devices[device].device_type -- On determine le SID en fonction de l'ID.
 				
-				if type_device == DOOR_DID or type_device == MOTI_DID then -- En fonction du SID, on determine la variable a lire. A ameliorer peut etre.
+				if type_device == DOOR_DID or type_device == MOTI_DID then -- En fonction du SID, on determine la variable a lire.
 					luup.variable_watch("watch_callback", DOOR_SID, "Tripped", device)
 				elseif type_device == BIN_DID then
 					luup.variable_watch("watch_callback", SWP_SID, "Status", device)
@@ -37,17 +33,42 @@
                 TimeSecu = 0
             end
 
+            -- BatteryDate ("urn:micasaverde-com:serviceId:HaDevice1")
+
             for k,id in pairs(t) do
                 
-                local temp, time = luup.variable_get(TEMP_SID, "CurrentTemperature", id)
-                temp = tonumber(temp) 
+                local invert = false
+                if (0 > id) then
+                    id = 0 - id
+                    invert = true
+                end
+                
+                local temp, time = luup.variable_get(TEMP_SID, "CurrentTemperature", id)                
+                temp = tonumber(temp)
+                
+                local BatDate = luup.variable_get(HAD_SID, "BatteryDate", id)
+                local MasterId = luup.devices[id].device_num_parent
+
+                if tonumber(MasterId) ~= nil and BatDate == nil then
+                    BatDate = luup.variable_get(HAD_SID, "BatteryDate", MasterId)
+                end
+                
                 if (temp ~= nil) then
-                    debuglog("Sonde " .. id .. " : " .. os.time()-time)
-                    if (os.time()-time > TimeSecu) and TimeSecu > 0 then
-                        debuglog(" Attention, la sonde " .. luup.attr_get("name",id) .. "(" .. id .. ")" .. " n'a pas ete mise a jour depuis plus de 30 minutes")
-                    else
+                    debuglog("Sonde " .. id .. " : " .. os.time()-time) 
+                    if (TimeSecu == 0) or (os.time()-time <= TimeSecu) then
+                        debuglog("Sonde " .. luup.attr_get("name",id) .. "(" .. id .. ")" .. "correctement lue (1)")
                         sum = sum + temp
                         count = count + 1
+                    elseif BatDate ~= nil and (os.time()-BatDate <= (TimeSecu * 4)) then
+                        debuglog("Sonde " .. luup.attr_get("name",id) .. "(" .. id .. ")" .. "correctement lue (2)")
+                        sum = sum + temp
+                        count = count + 1
+                    elseif invert then -- désactivation sécurité
+                        debuglog("Sonde " .. luup.attr_get("name",id) .. "(" .. id .. ")" .. "correctement lue (3)")
+                        sum = sum + temp
+                        count = count + 1                        
+                    else
+                        debuglog(" Attention, la sonde " .. luup.attr_get("name",id) .. "(" .. id .. ")" .. " n'a pas ete mise a jour depuis plus de " .. TimeSecu .. " secondes")
                     end
                 end
             end
