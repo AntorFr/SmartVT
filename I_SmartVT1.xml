@@ -399,7 +399,7 @@
             local TempTherm = luup.variable_get("urn:upnp-org:serviceId:TemperatureSensor1", "CurrentTemperature", lul_device)
             local Inhibited = (data.inhibited or 0) * 800 + 1000
         
-            local id = math.abs(data.heaters[1])
+            local id = data.heaters[1]
             local devicetype = luup.devices[id].device_type
             if (devicetype == BIN_DID) then
                 Chauffe = luup.variable_get(SWP_SID, "Status", id)
@@ -420,7 +420,7 @@
             end
         
             if #data.OutSensors &gt; 0 then
-               TempExt = luup.variable_get("urn:upnp-org:serviceId:TemperatureSensor1", "CurrentTemperature", data.OutSensors[1])
+               TempExt = luup.variable_get("urn:upnp-org:serviceId:TemperatureSensor1", "CurrentTemperature", math.abs(data.OutSensors[1]))
                TempExt = tonumber(TempExt) * 100
             else
                 TempExt = 0
