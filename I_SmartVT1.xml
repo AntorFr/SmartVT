@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <implementation>
 	<functions>
-		-- Smart Virtual Thermostat v1.0c
+		-- Smart Virtual Thermostat v2.0
         
         -- ServiceID
         local TEMP_SID =    "urn:upnp-org:serviceId:TemperatureSensor1"
@@ -14,6 +14,7 @@
 		local DIM_SID =		"urn:upnp-org:serviceId:Dimming1"
 		local DOOR_SID = 	"urn:micasaverde-com:serviceId:SecuritySensor1"
         local VSW_SID =     "urn:upnp-org:serviceId:VSwitch1"
+        local HAD_SID =     "urn:micasaverde-com:serviceId:HaDevice1"
 		local SmartVT1_id = tonumber(lul_device)
         
         -- DeviceID
@@ -34,7 +35,7 @@
 --		local interval = "1m"
 		local heaterStatus = "0"
         local DeltaMax = 1 -- Seuil de tolerence au dessus de la consigne
-        local debug = true
+        local debug = false
         local Grapher = "http://mios.antor.fr/Graph/logger/temp.php"
         
 		--		local startup -- Jeton permettant de savoir si l'on vient de rafraichir la Vera. Si oui, on relance le calcul.
@@ -45,6 +46,13 @@
 			local data = readSettings(lul_device)
             RecurentUpdateStatus(lul_device)
             register_watch(data.inhibitSensors)
+        
+            -- check data before process
+            if (data.InSensors == nil or #data.InSensors &lt; 1 or data.heaters == nil or #data.heaters &lt; 1) then
+                debuglog("Configuration erronee")
+                luup.task('Configuration erronée',2,'Smart Virtual Thermostat', -1)
+                return false
+            end
         
             return true,"ok","Smart Virtual Thermostat"
 		end
@@ -71,6 +79,8 @@
 
             data.heatSp = tonumber(readVariableOrInit(lul_device,TSH_SID, "CurrentSetpoint", DEFAULT_HEAT_SP ))
             data.coolSp = tonumber(readVariableOrInit(lul_device,TSC_SID, "CurrentSetpoint", DEFAULT_COOL_SP ))
+        
+            data.Grapher = luup.variable_get(SVT_SID,"Grapher", lul_device) or "http://mios.antor.fr/Graph/logger/temp.php"
         
             -- internal Variables
             data.ForcedModeState = readVariableOrInit(lul_device,SVT_SID, "Forced Mode", "ForcedOff" )
@@ -143,6 +153,7 @@
             -- check data before process
             if (data.InSensors == nil or #data.InSensors &lt; 1 or data.heaters == nil or #data.heaters &lt; 1) then
                 debuglog("Configuration erronee")
+                luup.task('Configuration erronée',2,'Smart Virtual Thermostat', -1)
                 return nil
             end
         
@@ -257,7 +268,7 @@
         
         function RecurentUpdateStatus(lul_device)
             lul_device = tonumber(lul_device)
-            luup.call_timer("RecurentUpdateStatus", 1, "1m", "", tostring(lul_device))
+            luup.call_timer("RecurentUpdateStatus", 1, "2m", "", tostring(lul_device))
             pcall(updateStatus,lul_device)
         end
         
@@ -384,7 +395,7 @@
             local data = readSettings(lul_device)
 
             local consigne = Consigne(data) * 100
-            local TempInt = luup.variable_get("urn:upnp-org:serviceId:TemperatureSensor1", "CurrentTemperature", data.InSensors[1])
+            local TempInt = luup.variable_get("urn:upnp-org:serviceId:TemperatureSensor1", "CurrentTemperature", math.abs(data.InSensors[1]))
             local TempTherm = luup.variable_get("urn:upnp-org:serviceId:TemperatureSensor1", "CurrentTemperature", lul_device)
             local Inhibited = (data.inhibited or 0) * 800 + 1000
         
@@ -409,7 +420,7 @@
             end
         
             if #data.OutSensors &gt; 0 then
-               TempExt = luup.variable_get("urn:upnp-org:serviceId:TemperatureSensor1", "CurrentTemperature", data.OutSensors[1])
+               TempExt = luup.variable_get("urn:upnp-org:serviceId:TemperatureSensor1", "CurrentTemperature", math.abs(data.OutSensors[1]))
                TempExt = tonumber(TempExt) * 100
             else
                 TempExt = 0
@@ -557,6 +568,14 @@
 			<name>GraphIt</name>
 			<job>
 				GraphIt(lul_device)
+				return 4, 5
+			</job>
+		</action>
+		<action>
+			<serviceId>urn:micasaverde-com:serviceId:SmartVT1</serviceId>
+			<name>UpdateStatus</name>
+			<job>
+				updateStatus(lul_device)
 				return 4, 5
 			</job>
 		</action>
