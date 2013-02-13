@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <implementation>
 	<functions>
-		-- Smart Virtual Thermostat v2.0
+		-- Smart Virtual Thermostat v2.1
         
         -- ServiceID
         local TEMP_SID =    "urn:upnp-org:serviceId:TemperatureSensor1"
@@ -40,7 +40,6 @@
 		--		local startup -- Jeton permettant de savoir si l'on vient de rafraichir la Vera. Si oui, on relance le calcul.
         
 		function virtual_thermostat_startup (lul_device)
-            debuglog("Smart Virtual thermostat running...")
 --            startup = 1
 			local data = readSettings(lul_device)
             RecurentUpdateStatus(lul_device)
@@ -48,7 +47,6 @@
         
             -- check data before process
             if (data.InSensors == nil or #data.InSensors &lt; 1 or data.heaters == nil or #data.heaters &lt; 1) then
-                debuglog("Configuration erronee")
                 luup.task('Configuration erronée',2,'Smart Virtual Thermostat', -1)
                 return false
             end
@@ -98,9 +96,7 @@
 		-- Fonction lancee si changement d'etat d'une variable watchee
 		function watch_callback(lul_device, lul_service, lul_variable, lul_value_old, lul_value_new)
 			local data = readSettings(SmartVT1_id)
-			debuglog("Watched variable changed: " .. lul_device .. " " .. lul_service .. " " .. lul_variable .. " from " .. lul_value_old .. " to " .. lul_value_new)
 			if (Inibitors(data.inhibitSensors)) then
-				debuglog("Une fenetre vient de s ouvrir, il faut gerer la tempo ouverture")
 				--luup.call_timer("gestionTempoOuverture", 1, tostring(data.OpenTempo), "", tostring(lul_device))
                 if  (data.OpenTempo ~= nil) and (data.OpenTempo &gt; 0) then
                     luup.call_timer("gestionTempoOuverture", 1, data.OpenTempo, "", tostring(SmartVT1_id))
@@ -108,7 +104,6 @@
                     gestionTempoOuverture(SmartVT1_id)
                 end
 			else
-				debuglog("Une fenetre vient de se fermer, il faut gerer la tempo fermeture")
 				--luup.call_timer("gestionTempoOuverture", 1, tostring(data.CloseTempo), "", tostring(lul_device))
                 if  (data.CloseTempo ~= nil) and (data.CloseTempo &gt; 0) then
                     luup.call_timer("gestionTempoFermeture", 1, data.CloseTempo, "", tostring(SmartVT1_id))
@@ -126,10 +121,7 @@
 			-- On verifie que Inibitors est toujours present apres la tempo pour desactiver le chauffage
 			if Inibitors(data.inhibitSensors) and (data.inhibited == 0) then
                 luup.variable_set (SVT_SID, "Inhibited", "1", lul_device)
-                debuglog("Inibitor detecte : arret du chauffage")
 				updateStatus(lul_device)
-            else
-				debuglog("Inibitor n'est plus detecte. Pas d'arret du chauffage")
 			end
 		end
 		
@@ -139,23 +131,12 @@
 			-- On verifie que Inibitors est toujours absent apres la tempo pour activer le chauffage
 			if not(Inibitors(data.inhibitSensors)) and (data.inhibited == 1) then
                 luup.variable_set (SVT_SID, "Inhibited", "0", lul_device)
-                debuglog("Inibitor n'est plus detecte et tempo ecoulee : reprise du chauffage")
-				updateStatus(lul_device)                
-            else
-				debuglog("Inibitor de nouveau detected. On ne reprend pas la regulation.")
+				updateStatus(lul_device)
 			end
 		end
 				        
 		function updateStatus(lul_device)
             local data = readSettings(lul_device)
-						        
-            -- check data before process
-            if (data.InSensors == nil or #data.InSensors &lt; 1 or data.heaters == nil or #data.heaters &lt; 1) then
-                debuglog("Configuration erronee")
-                luup.task('Configuration erronée',2,'Smart Virtual Thermostat', -1)
-                return nil
-            end
-        
         
             local Tint, Text = readTemp(lul_device,data)
 			
@@ -200,37 +181,28 @@
 				local tempcal = (data.TimesStamp + data.CalcPeriod)
                 if ( os.time() &gt;=  (data.TimesStamp + data.CalcPeriod )) then
                     -- On relance le calcul de la regulation tous les data.CalcPeriod secondes
-                    debuglog("ostime sup a " .. tempcal .. " = " .. data.TimesStamp .. "  +  " .. data.CalcPeriod)
 					AutoChangeOver(lul_device,true)
                     return
-				else
-				debuglog("ostime inf a " .. tempcal .. " = " .. data.TimesStamp .. "  +  " .. data.CalcPeriod)
                 end
         
         
                 -- Gestion des commandes
                 local ModeState = luup.variable_get (HVOS_SID, "ModeState", lul_device)
 				data = readSettings(lul_device) -- On relit les data pour charger la nouvelle valeur EndHeatTimeStamp, les timeleft...
-				debuglog("os.time() = " .. os.time() .. " et data.EndHeatTimesStamp = " .. data.EndHeatTimesStamp)
-				debuglog("ModeState = " .. ModeState)
 				local now = os.time()
 				data.heatTimeleft = data.EndHeatTimesStamp - now -- Temps restant avec fin de chauffe
 				if (data.heatTimeleft &lt; 0) then data.heatTimeleft = 0 end
 				data.calTimeleft = tempcal - now -- Temps restant avec nouveau calcul de regulation
-				
-				debuglog("Temps de chauffe restant : " .. data.heatTimeleft .. " et temps restant avec nouveau calcul : " .. data.calTimeleft) 
+
 				luup.variable_set (SVT_SID, "heatTimeleft", data.heatTimeleft, lul_device)
 				luup.variable_set (SVT_SID, "calTimeleft", data.calTimeleft, lul_device)
 				
                 if (data.inhibited == 1) then
-                    debuglog("Inibitor detecte : arret du chauffage")
                     SetTargetTable("0",data.heaters)
-                    debuglog("HEATER OFF")
         
                     local inhibited, time = Inibitors(data.inhibitSensors)
                     if not(inhibited) and (time + data.CloseTempo) &lt; os.time() then -- la tempo est terminee (securite pour assurer la reprise du chauffage)
                         luup.variable_set (SVT_SID, "Inhibited", "0", lul_device)
-                        debuglog("Inibitor n'est plus detecte et tempo ecoulee : reprise du chauffage")
                         luup.call_timer("updateStatus", 1, "1", "", tostring(lul_device))
                         return
                     end
@@ -242,10 +214,8 @@
                         return
                     elseif( os.time() &gt;= data.EndHeatTimesStamp ) then
                         SetTargetTable("0",data.heaters)
-						debuglog("HEATER OFF")
                     else
                         SetTargetTable("1",data.heaters)
-						debuglog("HEATER ON")
                     end
                 elseif(ModeState == "Cooling") then
                     -- a completer
@@ -256,7 +226,6 @@
 			else
 				luup.variable_set (HVUOM_SID, "ModeStatus", "Off", lul_device)
 				luup.variable_set (HVOS_SID, "ModeState", "Idle", lul_device)
-				debuglog("La puissance de chauffe est de: 0 ")
                 SetTargetTable("0",data.heaters)
 --				SetTargetTable("0",data.Coolers)
 			end
@@ -274,11 +243,9 @@
         function readTemp(lul_device,data)
         
             local Tint = AvgTemperature(data.InSensors,data.CalcPeriod*2) or Consigne(data)
-            debuglog("La temperature moyenne interieure est de " .. Tint .. " DEGC")
             luup.variable_set (TEMP_SID, "CurrentTemperature", Tint, lul_device)
         
             local Text = AvgTemperature(data.OutSensors,data.CalcPeriod*24) or Consigne(data)
-            debuglog("La temperature moyenne exterieure est de " .. Text .. " DEGC")
             --luup.variable_set (TEMP_SID, "CurrentTemperature", Text, lul_device)
         
             return Tint,Text
@@ -305,15 +272,12 @@
 				if type_device == DOOR_DID or type_device == MOTI_DID then -- En fonction du SID, on determine la variable a lire.
 					inhibitor, lastSet = luup.variable_get(DOOR_SID, "Tripped", device)
                     GlobalLastSet = math.max(GlobalLastSet,tonumber(lastSet))
-					debuglog("inhibitor DOOR = " .. inhibitor)
                 elseif type_device == VSW_DID then
                     inhibitor, lastSet = luup.variable_get(VSW_SID, "Status", device)
                     GlobalLastSet = math.max(GlobalLastSet,tonumber(lastSet))
-                    debuglog("inhibitor DOOR = " .. inhibitor)
                 elseif type_device == BIN_DID then
 					inhibitor, lastSet = luup.variable_get(SWP_SID, "Status", device)
                     GlobalLastSet = math.max(GlobalLastSet,tonumber(lastSet))
-					debuglog("inhibitor SWP = " .. inhibitor)
 				end
 								
                 if (inhibitor == (invert and "0" or "1")) then
@@ -346,39 +310,35 @@
             local consigne = Consigne(data)
             local calnow = os.time()
             if #data.AutoLearning ~= 6 then
-                debuglog("AutoLearning data corrupted : re-init it")
                 luup.variable_set (SVT_SID, "AutoLearning", "0,1,1,0,0,0", lul_device)
-        
                 return true
             elseif data.AutoLearning[1] ~= 1 then
-                debuglog("data not initilised")
+                -- data not initilised
                 return false
             elseif data.AutoLearning[6] == 0 then
-                debuglog("Heater was off, nothing to learn")
-                return
+                -- Heater was off, nothing to learn
+                return false
             elseif data.AutoLearning[6] == 100 and consigne &gt; Tint then
-                debuglog("heater was on max but consigne was not reached so we dont learn")
+                -- Heater was on max but consigne was not reached so we dont learn
+                return false
+            elseif data.TimesStamp &gt; calnow or (calnow - data.TimesStamp) &gt; (data.CalcPeriod * 2)  then -- Evite de tout casser en cas de perte de date de la Vera
                 return false
             elseif Tint &gt; data.AutoLearning[4] and consigne &gt; data.AutoLearning[4]  then -- Si Tinterieur sup a Tinterieur initial et Consigne sup a Tinterieur initial
-                debuglog("Learn ConstC")
+                -- Learn ConstC
                 local ConstC = data.constC * ((consigne - data.AutoLearning[4]) / (Tint - data.AutoLearning[4] )) * (calnow - data.TimesStamp) / data.CalcPeriod
-                debuglog("New calculte ConstC is ".. ConstC )
                 ConstC = round((data.constC * data.AutoLearning[2] + ConstC) / (data.AutoLearning[2] +1),1)
                 data.AutoLearning[2] = math.min(data.AutoLearning[2] +1 , 50)
-                debuglog("New ponderate ConstC is ".. ConstC )
         
                 luup.variable_set (SVT_SID, "AutoLearning", fromListOfNumbers(data.AutoLearning), lul_device)
                 luup.variable_set (SVT_SID, "ConstC", ConstC , lul_device)
         
                 return true
             elseif consigne &gt; data.AutoLearning[5] then
-                debuglog("Learn ConstT")
+                -- Learn ConstT
                 local ConstT = data.constT + (( consigne - Tint) / ( consigne - data.AutoLearning[5] )) * data.constC * (calnow - data.TimesStamp) / data.CalcPeriod
-                debuglog("New calculte ConstT is ".. ConstT )
                 ConstT = round((data.constT * data.AutoLearning[3] + ConstT) / (data.AutoLearning[3] +1),1)
                 if ConstT  &lt; 0 then ConstT = 0 end 
                 data.AutoLearning[3] = math.min(data.AutoLearning[3] +1 , 50)
-                debuglog("New ponderate ConstT is ".. ConstT )
         
                 luup.variable_set (SVT_SID, "AutoLearning", fromListOfNumbers(data.AutoLearning), lul_device)
                 luup.variable_set (SVT_SID, "ConstT", ConstT , lul_device)
@@ -433,7 +393,6 @@
         
             local lul_update = data.Grapher .. '?Vera_id=' .. Vera_id .. '&amp;Device_id=' ..  Device_id .. '&amp;TempExt=' .. TempExt .. '&amp;TempInt=' ..  TempInt .. '&amp;TempTherm=' ..  TempTherm .. '&amp;Consigne=' ..  consigne  .. '&amp;Chauffe=' ..  Chauffe .. '&amp;Inhibited=' ..  Inhibited
         
-            debuglog("Grapher : " .. lul_update)
             luup.inet.wget(lul_update)
         
             return true
@@ -464,9 +423,6 @@
 
             --local hchauf = os.time(calnow + tpschauf)
             local hchauf = GetTime(calnow,tpschauf) -- Needed to works with Vera 1 (single-precision floats)
-        
-            debuglog("La puissance calculee est de : " .. power .. "% et le temps de chauffe est de : " .. (tpschauf/60) .. " minutes sur " .. (data.CalcPeriod/60) .. " minutes pour une consigne de " .. consigne)
-            debuglog("Puissance calculee a: " .. calnow .. ". Le chauffage s'arretera a : " .. hchauf)
         
 			if power == 0 then
                 luup.variable_set (HVOS_SID, "ModeState", "Idle", lul_device)
