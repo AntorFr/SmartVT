@@ -54,21 +54,17 @@
                 end
                 
                 if (temp ~= nil) then
-                    debuglog("Sonde " .. id .. " : " .. os.time()-time) 
                     if (TimeSecu == 0) or (os.time()-time <= TimeSecu) then
-                        debuglog("Sonde " .. luup.attr_get("name",id) .. "(" .. id .. ")" .. "correctement lue (1)")
                         sum = sum + temp
                         count = count + 1
                     elseif BatDate ~= nil and (os.time()-BatDate <= (TimeSecu * 4)) then
-                        debuglog("Sonde " .. luup.attr_get("name",id) .. "(" .. id .. ")" .. "correctement lue (2)")
                         sum = sum + temp
                         count = count + 1
                     elseif invert then -- désactivation sécurité
-                        debuglog("Sonde " .. luup.attr_get("name",id) .. "(" .. id .. ")" .. "correctement lue (3)")
                         sum = sum + temp
-                        count = count + 1                        
+                        count = count + 1
                     else
-                        debuglog(" Attention, la sonde " .. luup.attr_get("name",id) .. "(" .. id .. ")" .. " n'a pas ete mise a jour depuis plus de " .. TimeSecu .. " secondes")
+                        -- Attention, la sonde n'a pas prise en compte
                     end
                 end
             end
@@ -108,9 +104,6 @@
                     elseif target == "0" and heaterStatus ~= "Off"  then
                         luup.call_action(HVUOM_SID, "SetModeTarget", { NewModeTarget= "Off" }, id)
                     end
-
-                else
-                    debuglog("unknow heater device type (id :" .. id .. ")")
                 end
             end
         end
