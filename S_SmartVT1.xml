@@ -92,6 +92,16 @@
            <name>TimesStamp</name>
            <dataType>ui4</dataType>
        </stateVariable>
+       <stateVariable>
+           <name>EnergyModeStatus</name>
+           <shortCode>EnergyMode</shortCode>
+           <dataType>string</dataType>
+           <defaultValue>Normal</defaultValue>
+           <allowedValueList>
+               <allowedValue>Normal</allowedValue>
+               <allowedValue>EnergySavingsMode</allowedValue>
+           </allowedValueList>
+       </stateVariable>
    </serviceStateTable>
    <actionList>
    	<action>
