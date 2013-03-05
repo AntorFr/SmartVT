@@ -4,10 +4,8 @@
 		-- Fonction permettant de surveiller les variables presentes dans "inhibit Sensors"
 		function register_watch(Sensors)
 			for index = 1, #Sensors, 1 do
-
                 local device = math.abs(Sensors[index])
 				local type_device = luup.devices[device].device_type -- On determine le SID en fonction de l'ID.
-				
 				if type_device == DOOR_DID or type_device == MOTI_DID then -- En fonction du SID, on determine la variable a lire.
 					luup.variable_watch("watch_callback", DOOR_SID, "Tripped", device)
 				elseif type_device == BIN_DID then

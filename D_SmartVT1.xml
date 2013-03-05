@@ -17,16 +17,16 @@
         <serviceId>urn:upnp-org:serviceId:HVAC_FanOperatingMode1</serviceId>
         <SCPDURL>S_HVAC_FanOperatingMode1.xml</SCPDURL>
       </service>
-      <service>
-        <serviceType>urn:micasaverde-com:serviceId:HVAC_OperatingState:1</serviceType>
-        <serviceId>urn:micasaverde-com:serviceId:HVAC_OperatingState1</serviceId>
-        <SCPDURL>S_HVAC_OperatingState1.xml</SCPDURL>
-      </service>
         <service>
+        <serviceType>urn:micasaverde-com:serviceId:HVAC_OperatingState:1</serviceType>
+            <serviceId>urn:micasaverde-com:serviceId:HVAC_OperatingState1</serviceId>
+            <SCPDURL>S_HVAC_OperatingState1.xml</SCPDURL>
+      </service>
+      <service>
             <serviceType>urn:micasaverde-com:serviceId:SmartVT:1</serviceType>
             <serviceId>urn:micasaverde-com:serviceId:SmartVT1</serviceId>
             <SCPDURL>S_SmartVT1.xml</SCPDURL>
-        </service>
+      </service>
       <service>
         <serviceType>urn:schemas-upnp-org:service:HVAC_UserOperatingMode:1</serviceType>
         <serviceId>urn:upnp-org:serviceId:HVAC_UserOperatingMode1</serviceId>
