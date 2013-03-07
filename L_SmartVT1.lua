@@ -1,5 +1,3 @@
-        local SWP_SID =		"urn:upnp-org:serviceId:SwitchPower1"
-		local DOOR_SID =	"urn:micasaverde-com:serviceId:SecuritySensor1"
 
 		-- Fonction permettant de surveiller les variables presentes dans "inhibit Sensors"
 		function register_watch(Sensors)
@@ -10,6 +8,8 @@
 					luup.variable_watch("watch_callback", DOOR_SID, "Tripped", device)
 				elseif type_device == BIN_DID then
 					luup.variable_watch("watch_callback", SWP_SID, "Status", device)
+                elseif type_device == VSW_DID then
+                    luup.variable_watch("watch_callback", VSW_SID, "Status", device)
 				end
 			end
             return true

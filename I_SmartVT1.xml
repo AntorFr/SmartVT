@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <implementation>
 	<functions>
-		-- Smart Virtual Thermostat v2.3
+		-- Smart Virtual Thermostat v2.5
 
         
         -- ServiceID
@@ -27,28 +27,29 @@
         local VSW_DID =     "urn:schemas-upnp-org:device:VSwitch:1"
         local HEAT_DID =    "urn:schemas-upnp-org:device:Heater:1"
         
-		local DELAY = 20 -- Seconds
 		local DEFAULT_HEAT_SP = 21
 		local DEFAULT_COOL_SP = 18
 		local DEFAULT_HG_SP = 8
-		local constC = 60
-		local constT = 1
+		local DEFAULT_constC = 60
+		local DEFAULT_constT = 1
 		local heaterStatus = "0"
         local DeltaMax = 1 -- Seuil de tolerence au dessus de la consigne
         local debug = false
         
-		--		local startup -- Jeton permettant de savoir si l'on vient de rafraichir la Vera. Si oui, on relance le calcul.
-        
+		
 		function virtual_thermostat_startup (lul_device)
 			local data = readSettings(lul_device)
         
             -- check data before process
             if (data.InSensors == nil or #data.InSensors &lt; 1 or data.heaters == nil or #data.heaters &lt; 1) then
-                luup.task('Configuration erronée',2,'Smart Virtual Thermostat', -1)
+                luup.task('Bad parameters',2,'Smart Virtual Thermostat', -1)
                 return false
             end
-
-            register_watch(data.inhibitSensors)
+        
+            if (#data.inhibitSensors &gt;= 1) then
+                register_watch(data.inhibitSensors)
+            end
+        
             luup.variable_set (SVT_SID, "EnergyModeStatus", data.EnergyModeStatus , lul_device)
             luup.call_timer("RecurentUpdateStatus", 1, "1m", "", tostring(lul_device))
 
@@ -71,14 +72,11 @@
 			data.powerMin = tonumber(readVariableOrInit(lul_device,SVT_SID, "powerMin", "0" ))
             data.CalcPeriod = tonumber(readVariableOrInit(lul_device,SVT_SID, "Calculation period", "3600" ))
         
-            data.constC = tonumber(readVariableOrInit(lul_device,SVT_SID, "ConstC", constC )) or constC
-            data.constT = tonumber(readVariableOrInit(lul_device,SVT_SID, "ConstT", constT )) or constT
-
+            data.constC = tonumber(readVariableOrInit(lul_device,SVT_SID, "ConstC", DEFAULT_constC ))
+            data.constT = tonumber(readVariableOrInit(lul_device,SVT_SID, "ConstT", DEFAULT_constT ))
 
             data.heatSp = tonumber(readVariableOrInit(lul_device,TSH_SID, "CurrentSetpoint", DEFAULT_HEAT_SP ))
             data.coolSp = tonumber(readVariableOrInit(lul_device,TSC_SID, "CurrentSetpoint", DEFAULT_COOL_SP ))
-        
-            data.Grapher = luup.variable_get(SVT_SID,"Grapher", lul_device) or "http://mios.antor.fr/Graph/logger/temp.php"
         
             -- internal Variables
             data.ForcedModeState = readVariableOrInit(lul_device,SVT_SID, "Forced Mode", "ForcedOff" )
@@ -98,14 +96,12 @@
 		function watch_callback(lul_device, lul_service, lul_variable, lul_value_old, lul_value_new)
 			local data = readSettings(SmartVT1_id)
 			if (Inibitors(data.inhibitSensors)) then
-				--luup.call_timer("gestionTempoOuverture", 1, tostring(data.OpenTempo), "", tostring(lul_device))
                 if  (data.OpenTempo ~= nil) and (data.OpenTempo &gt; 0) then
                     luup.call_timer("gestionTempoOuverture", 1, data.OpenTempo, "", tostring(SmartVT1_id))
                 else
                     gestionTempoOuverture(SmartVT1_id)
                 end
 			else
-				--luup.call_timer("gestionTempoOuverture", 1, tostring(data.CloseTempo), "", tostring(lul_device))
                 if  (data.CloseTempo ~= nil) and (data.CloseTempo &gt; 0) then
                     luup.call_timer("gestionTempoFermeture", 1, data.CloseTempo, "", tostring(SmartVT1_id))
                 else
@@ -153,11 +149,10 @@
                         return
                     else
                         data.heatTimeleft = data.EndHeatTimesStamp - now -- Temps restant avec fin de chauffe
-        
                         luup.variable_set (SVT_SID, "heatTimeleft", data.heatTimeleft, lul_device)
                         luup.variable_set (SVT_SID, "calTimeleft", data.heatTimeleft, lul_device)
-        
                         luup.variable_set (HVOS_SID, "ModeState", "Heating", lul_device)
+        
                         SetTargetTable("1",data.heaters)
                     end
                 else
@@ -168,16 +163,14 @@
                     SetTargetTable("1",data.heaters)
                 end
 				
-			elseif (data.ModeStatus == "CoolOn") then
+			elseif (data.ModeStatus == "CoolOn") then -- mode bypass
         
 				luup.variable_set (HVOS_SID, "ModeState", "Cooling", lul_device)
                 luup.variable_set (SVT_SID, "heatTimeleft", "∞", lul_device)
                 luup.variable_set (SVT_SID, "calTimeleft", "∞", lul_device)
---				SetTargetTable("1",data.Coolers)
         
 			elseif (data.ModeStatus == "AutoChangeOver") then
         
-
                 -- Gestion de l'intelligence
 				local tempcal = (data.TimesStamp + data.CalcPeriod)
                 if ( os.time() &gt;=  (data.TimesStamp + data.CalcPeriod )) then
@@ -189,7 +182,6 @@
         
                 -- Gestion des commandes
                 local ModeState = luup.variable_get (HVOS_SID, "ModeState", lul_device)
-				data = readSettings(lul_device) -- On relit les data pour charger la nouvelle valeur EndHeatTimeStamp, les timeleft...
 				local now = os.time()
 				data.heatTimeleft = data.EndHeatTimesStamp - now -- Temps restant avec fin de chauffe
 				if (data.heatTimeleft &lt; 0) then data.heatTimeleft = 0 end
@@ -202,7 +194,7 @@
                     SetTargetTable("0",data.heaters)
         
                     local inhibited, time = Inibitors(data.inhibitSensors)
-                    if not(inhibited) and (time + data.CloseTempo) &lt; os.time() then -- la tempo est terminee (securite pour assurer la reprise du chauffage)
+                    if not(inhibited) and (time + data.CloseTempo) &lt; now then -- la tempo est terminee (securite pour assurer la reprise du chauffage)
                         luup.variable_set (SVT_SID, "Inhibited", "0", lul_device)
                         luup.call_timer("updateStatus", 1, "1", "", tostring(lul_device))
                         return
@@ -213,7 +205,7 @@
                     if ( Tint &gt;= (Consigne(data) + DeltaMax)) then -- temperature de consigne + Delta depasse : On relance la chargement auto
                         AutoChangeOver(lul_device,true)
                         return
-                    elseif( os.time() &gt;= data.EndHeatTimesStamp ) then
+                    elseif( now &gt;= data.EndHeatTimesStamp ) then
                         SetTargetTable("0",data.heaters)
                     else
                         SetTargetTable("1",data.heaters)
@@ -228,14 +220,13 @@
 				luup.variable_set (HVUOM_SID, "ModeStatus", "Off", lul_device)
 				luup.variable_set (HVOS_SID, "ModeState", "Idle", lul_device)
                 SetTargetTable("0",data.heaters)
---				SetTargetTable("0",data.Coolers)
 			end
         
 		end
         
         function RecurentUpdateStatus(lul_device)
             lul_device = tonumber(lul_device)
-            luup.call_timer("RecurentUpdateStatus", 1, "5m", "", tostring(lul_device))
+            luup.call_timer("RecurentUpdateStatus", 1, "2m", "", tostring(lul_device))
             pcall(updateStatus,lul_device)
         end
         
@@ -257,8 +248,6 @@
                 local device = Sensors[index]
 				local inhibitor
 				local lastSet
-                
-				
 				local invert = false
         
                 if (0 > device) then
@@ -277,6 +266,12 @@
                 elseif type_device == BIN_DID then
 					inhibitor, lastSet = luup.variable_get(SWP_SID, "Status", device)
                     GlobalLastSet = math.max(GlobalLastSet,tonumber(lastSet))
+                elseif type_device == VSW_DID then
+                    inhibitor, lastSet = luup.variable_get(VSW_SID, "Status", device)
+                    GlobalLastSet = math.max(GlobalLastSet,tonumber(lastSet))
+                else
+                    invert = false
+                    inhibitor = "0"
 				end
 								
                 if (inhibitor == (invert and "0" or "1")) then
@@ -299,7 +294,6 @@
 
             end
                 
-        
             updateStatus(lul_device)
         end
         
@@ -350,8 +344,11 @@
         
         function GraphIt(lul_device)
             local TempExt, Chauffe
+        
             local data = readSettings(lul_device)
-
+            data.Grapher = luup.variable_get(SVT_SID,"Grapher", lul_device) or "http://mios.antor.fr/Graph/logger/temp.php"
+        
+        
             local consigne = Consigne(data) * 100
             local TempInt = luup.variable_get("urn:upnp-org:serviceId:TemperatureSensor1", "CurrentTemperature", math.abs(data.InSensors[1]))
             local TempTherm = luup.variable_get("urn:upnp-org:serviceId:TemperatureSensor1", "CurrentTemperature", lul_device)
