@@ -172,14 +172,14 @@
 			elseif (data.ModeStatus == "AutoChangeOver") then
         
                 -- Gestion de l'intelligence
-				local tempcal = (data.TimesStamp + data.CalcPeriod)
                 if ( os.time() &gt;=  (data.TimesStamp + data.CalcPeriod )) then
                     -- On relance le calcul de la regulation tous les data.CalcPeriod secondes
-					AutoChangeOver(lul_device,true)
-                    return
+					AutoChangeOver(lul_device,true,true)
+                    data = readSettings(lul_device)
                 end
-        
-        
+				local tempcal = (data.TimesStamp + data.CalcPeriod)
+
+
                 -- Gestion des commandes
                 local ModeState = luup.variable_get (HVOS_SID, "ModeState", lul_device)
 				local now = os.time()
@@ -203,9 +203,10 @@
                 elseif (ModeState == "Heating") then
         
                     if ( Tint &gt;= (Consigne(data) + DeltaMax)) then -- temperature de consigne + Delta depasse : On relance la chargement auto
-                        AutoChangeOver(lul_device,true)
-                        return
-                    elseif( now &gt;= data.EndHeatTimesStamp ) then
+                        AutoChangeOver(lul_device,true,true)
+                    end
+
+                    if( now &gt;= data.EndHeatTimesStamp ) then
                         SetTargetTable("0",data.heaters)
                     else
                         SetTargetTable("1",data.heaters)
@@ -394,8 +395,8 @@
             return true
         
         end
-		
-        function AutoChangeOver(lul_device,learn)
+
+        function AutoChangeOver(lul_device,learn,dont_update_status)
 
             local data = readSettings(lul_device)
             local calnow = os.time()
@@ -437,8 +438,10 @@
                 luup.variable_set (SVT_SID, "AutoLearning", fromListOfNumbers(data.AutoLearning), lul_device)
             end
 
-            
-            updateStatus(lul_device)
+
+            if not dont_update_status then
+                updateStatus(lul_device)
+            end
         end
 
 	</functions>
