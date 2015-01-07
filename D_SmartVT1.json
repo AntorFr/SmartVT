@@ -1,5 +1,6 @@
 {
     "flashicon": "http://mios.antor.fr/Icons/SmartVT.png",
+    "default_icon": "http://mios.antor.fr/Icons/SmartVT.png",
     "iconText": "1",
     "imgIconBody": "pics/devices/Thermostat_BODY.png",
     "imgIconDimmable": "",
@@ -897,6 +898,7 @@
             ]
         }
     ],
-    "DeviceType": "urn:schemas-upnp-org:device:HVAC_ZoneThermostat:1",
-    "device_type": "urn:schemas-upnp-org:device:HVAC_ZoneThermostat:1"
+    "DeviceType": "urn:antor-fr:device:HVAC_ZoneThermostat:1",
+    "device_type": "urn:antor-fr:device:HVAC_ZoneThermostat:1"
+    
 }

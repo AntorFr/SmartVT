@@ -38,6 +38,7 @@
         
 		
 		function virtual_thermostat_startup (lul_device)
+            luup.set_failure(false)
 			local data = readSettings(lul_device)
         
             -- check data before process
