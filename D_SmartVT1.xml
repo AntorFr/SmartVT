@@ -45,6 +45,11 @@
       </service>
       <service>
         <serviceType>urn:schemas-upnp-org:service:TemperatureSetpoint:1</serviceType>
+        <serviceId>urn:upnp-org:serviceId:TemperatureSetpoint1</serviceId>
+        <SCPDURL>S_TemperatureSetpoint1.xml</SCPDURL>
+      </service>
+      <service>
+        <serviceType>urn:schemas-upnp-org:service:TemperatureSetpoint:1</serviceType>
         <serviceId>urn:upnp-org:serviceId:TemperatureSetpoint1_Heat</serviceId>
         <SCPDURL>S_TemperatureSetpoint1.xml</SCPDURL>
       </service>

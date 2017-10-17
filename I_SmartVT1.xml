@@ -504,6 +504,21 @@
 			</job>
 		</action>
 		<action>
+			<serviceId>urn:upnp-org:serviceId:TemperatureSetpoint1</serviceId>
+			<name>SetCurrentSetpoint</name>
+			<job>
+			-- On conditionne le lancement des fonctions au mode selectionne pour ne pas recalculer le coef quand on est dans lautre mode
+				luup.variable_set (TSH_SID, "CurrentSetpoint", lul_settings.NewCurrentSetpoint, lul_device)
+				luup.variable_set (TSC_SID, "CurrentSetpoint", lul_settings.NewCurrentSetpoint, lul_device)
+				local EnergyModeStatus = luup.variable_get (HVUOM_SID, "EnergyModeStatus", lul_device)
+                local ModeStatus = luup.variable_get (HVUOM_SID, "ModeStatus", lul_device)
+				if ((ModeStatus == "AutoChangeOver") and (EnergyModeStatus == "Normal")) then
+                    AutoChangeOver(lul_device)
+                end
+				return 4, 5
+			</job>
+		</action>
+		<action>
 			<serviceId>urn:upnp-org:serviceId:TemperatureSetpoint1_Cool</serviceId>
 			<name>SetCurrentSetpoint</name>
 			<job>
