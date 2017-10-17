@@ -481,6 +481,10 @@
                     AutoChangeOver(lul_device)
                 elseif lul_settings.NewModeTarget == "HeatOn" then
                     HeatOn(lul_device)
+				else
+					-- ajout de ce block par LV999 le 22/01/2016 pour un effet immédiat de
+					-- la commande "Off" et non par attente timer recurrent de 2 mins
+					updateStatus(lul_device)
                 end
 				return 4, 5
 			</job>
